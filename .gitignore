@@ -1,0 +1,18 @@
+# Editors
+.nova
+.vscode
+
+# Nix
+.envrc
+.direnv
+.nix-*
+
+# OCaml
+_build
+
+# Midnite Development
+examples
+
+# Misc
+.DS_Store
+*~
