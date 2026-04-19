@@ -24,6 +24,7 @@ type audio_stream = {
   language : string option;
   profile : string option;
   sample_rate : int option;
+  title : string option;
 }
 
 type subtitle_stream = {
@@ -122,6 +123,7 @@ let parse_audio_stream json : audio_stream =
       json |> member "sample_rate" |> to_string_option
       |> Option.map int_of_string_opt
       |> Option.join;
+    title = get_tags_title json;
   }
 
 let parse_subtitle_stream json : subtitle_stream =

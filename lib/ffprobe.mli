@@ -23,6 +23,7 @@ type audio_stream = {
   language : string option;
   profile : string option;
   sample_rate : int option;
+  title : string option;
 }
 (** ? **)
 

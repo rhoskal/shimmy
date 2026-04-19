@@ -29,7 +29,8 @@ let get_bit_depth (stream : Ffprobe.video_stream) : int =
 let print_video_stream (stream : Ffprobe.video_stream) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
     (match stream.language with Some lang -> lang | None -> "und");
-  Printf.printf "  • Codec      : %s\n" stream.codec_name;
+  Printf.printf "  • Codec      : %s\n"
+    (String.uppercase_ascii stream.codec_name);
   Printf.printf "  • Resolution : %dx%d\n" stream.width stream.height;
   (match stream.avg_frame_rate with
   | Some r -> (
@@ -48,12 +49,10 @@ let print_video_stream (stream : Ffprobe.video_stream) : unit =
 let print_audio_stream (stream : Ffprobe.audio_stream) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
     (match stream.language with Some lang -> lang | None -> "und");
-  Printf.printf "  • Codec      : %s\n" stream.codec_name;
+  Printf.printf "  • Codec      : %s\n"
+    (String.uppercase_ascii stream.codec_name);
   (match stream.profile with
   | Some p -> Printf.printf "  • Profile    : %s\n" p
-  | None -> ());
-  (match stream.sample_rate with
-  | Some r -> Printf.printf "  • SampleRate : %d Hz\n" r
   | None -> ());
   (match stream.channels with
   | Some c -> Printf.printf "  • Channels   : %d\n" c
@@ -61,14 +60,23 @@ let print_audio_stream (stream : Ffprobe.audio_stream) : unit =
   (match stream.bitrate with
   | Some b -> Printf.printf "  • Bitrate    : %d kbps\n" (b / 1000)
   | None -> ());
-  match stream.duration with
-  | Some d -> Printf.printf "  • Duration   : %s\n" (format_duration d)
+  (match stream.sample_rate with
+  | Some r -> Printf.printf "  • SampleRate : %d Hz\n" r
+  | None -> ());
+  match stream.title with
+  | Some t -> Printf.printf "  • Title      : %s\n" t
   | None -> ()
 
 let print_subtitle_stream (stream : Ffprobe.subtitle_stream) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
     (match stream.language with Some lang -> lang | None -> "und");
-  Printf.printf "  • Codec      : %s\n" stream.codec_name;
+  Printf.printf "  • Codec      : %s\n"
+    (match stream.codec_name with
+    | "ass" -> "ASS"
+    | "hdmv_pgs_subtitle" -> "PGS"
+    | "subrip" -> "SRT"
+    | "vobsub" -> "VOBSUB"
+    | _ -> "UNKNOWN");
   (match stream.title with
   | Some t -> Printf.printf "  • Title      : %s\n" t
   | None -> ());
