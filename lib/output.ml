@@ -83,7 +83,7 @@ let print_subtitle_stream (stream : Ffprobe.subtitle_stream) : unit =
   Printf.printf "  • SDH        : %b\n" stream.hearing_impaired
 
 let print_format_info (fmt : Ffprobe.format_info) : unit =
-  Printf.printf "  • Name       : %s\n" (Filename.basename fmt.filename);
+  Printf.printf "  • Filename   : %s\n" (Filename.basename fmt.filename);
   (match fmt.size with
   | Some bytes ->
       if bytes > 1_073_741_824 then
@@ -96,10 +96,11 @@ let print_format_info (fmt : Ffprobe.format_info) : unit =
   Printf.printf "  • Container  : %s\n"
     (match fmt.format_name with
     | Some "matroska,webm" -> "MKV"
+    | Some "mp4" -> "MP4"
     | _ -> "UNKNOWN")
 
 let print_probe_result (result : Ffprobe.probe_result) : unit =
-  print_section_header "FILE";
+  print_section_header "FORMAT";
   print_format_info result.format;
 
   let videos = Ffprobe.get_video_streams result in
