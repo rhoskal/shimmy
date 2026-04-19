@@ -7,7 +7,6 @@ type video_stream = {
   avg_frame_rate : string option;
   bit_depth : int option;
   codec_name : string;
-  duration : float option;
   height : int;
   language : string option;
   pix_fmt : string option;
@@ -20,7 +19,6 @@ type audio_stream = {
   bitrate : int option;
   channels : int option;
   codec_name : string;
-  duration : float option;
   language : string option;
   profile : string option;
   sample_rate : int option;
@@ -44,6 +42,7 @@ type stream =
   | Data of data_stream
 
 type format_info = {
+  duration : float option;
   filename : string;
   format_name : string option;
   size : int option;
@@ -99,7 +98,6 @@ let parse_video_stream json : video_stream =
       |> Option.map int_of_string_opt
       |> Option.join;
     codec_name = json |> member "codec_name" |> to_string;
-    duration = json |> member "duration" |> to_float_option;
     height = json |> member "height" |> to_int;
     language = get_tags_language json;
     pix_fmt = json |> member "pix_fmt" |> to_string_option;
@@ -116,7 +114,6 @@ let parse_audio_stream json : audio_stream =
       |> Option.join;
     channels = json |> member "channels" |> to_int_option;
     codec_name = json |> member "codec_name" |> to_string;
-    duration = json |> member "duration" |> to_float_option;
     language = get_tags_language json;
     profile = json |> member "profile" |> to_string_option;
     sample_rate =
@@ -147,6 +144,9 @@ let parse_data_stream json : data_stream =
 
 let parse_format json =
   {
+    duration =
+      json |> member "duration" |> to_string_option
+      |> Option.map float_of_string;
     filename = json |> member "filename" |> to_string;
     format_name = json |> member "format_name" |> to_string_option;
     size =
@@ -222,7 +222,13 @@ let probe_file filepath =
         let format =
           match member "format" json with
           | `Assoc fmt_json -> parse_format (`Assoc fmt_json)
-          | _ -> { filename = filepath; format_name = None; size = None }
+          | _ ->
+              {
+                duration = None;
+                filename = filepath;
+                format_name = None;
+                size = None;
+              }
         in
         Ok { streams; format }
       with

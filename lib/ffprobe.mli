@@ -16,7 +16,6 @@ type video_stream = {
   avg_frame_rate : string option;
   bit_depth : int option;
   codec_name : string;
-  duration : float option;
   height : int;
   language : string option;
   pix_fmt : string option;
@@ -31,7 +30,6 @@ type video_stream = {
     - [avg_frame_rate]: Raw ffprobe string (e.g. "30000/1001"). Not normalized.
     - [bit_depth]: Bits per pixel component, if available (e.g. 8, 10).
     - [codec_name]: Codec identifier (e.g. "h264", "hevc").
-    - [duration]: Stream duration in seconds.
     - [height], [width]: Frame dimensions in pixels.
     - [language]: ISO language code from tags (e.g. "eng").
     - [pix_fmt]: Pixel format (e.g. "yuv420p").
@@ -42,7 +40,6 @@ type audio_stream = {
   bitrate : int option;
   channels : int option;
   codec_name : string;
-  duration : float option;
   language : string option;
   profile : string option;
   sample_rate : int option;
@@ -54,7 +51,6 @@ type audio_stream = {
     - [bitrate]: Bitrate in bits per second.
     - [channels]: Number of audio channels (e.g. 2, 6).
     - [codec_name]: Codec identifier (e.g. "aac", "opus").
-    - [duration]: Duration in seconds.
     - [language]: ISO language code from tags.
     - [profile]: Codec profile (e.g. "LC").
     - [sample_rate]: Sampling rate in Hz (e.g. 44100).
@@ -93,12 +89,14 @@ type stream =
           that stream kind. *)
 
 type format_info = {
+  duration : float option;
   filename : string;
   format_name : string option;
   size : int option;
 }
 (** Container-level metadata extracted from ffprobe "format".
 
+    - [duration]: Stream duration in seconds.
     - [filename]: Input filename as reported by ffprobe.
     - [format_name]: Container format (e.g. "matroska", "mp4"), possibly a
       comma-separated list.

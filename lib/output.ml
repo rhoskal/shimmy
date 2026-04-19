@@ -38,9 +38,6 @@ let print_video_stream (stream : Ffprobe.video_stream) : unit =
       | Some fps -> Printf.printf "  • FrameRate  : %d\n" fps
       | None -> Printf.printf "  • FrameRate  : UNKNOWN\n")
   | None -> ());
-  (match stream.duration with
-  | Some d -> Printf.printf "  • Duration   : %s\n" (format_duration d)
-  | None -> ());
   Printf.printf "  • BitDepth   : %d\n" (get_bit_depth stream);
   match stream.profile with
   | Some p -> Printf.printf "  • Profile    : %s\n" p
@@ -84,6 +81,9 @@ let print_subtitle_stream (stream : Ffprobe.subtitle_stream) : unit =
 
 let print_format_info (fmt : Ffprobe.format_info) : unit =
   Printf.printf "  • Filename   : %s\n" (Filename.basename fmt.filename);
+  (match fmt.duration with
+  | Some d -> Printf.printf "  • Duration   : %s\n" (format_duration d)
+  | None -> ());
   (match fmt.size with
   | Some bytes ->
       if bytes > 1_073_741_824 then
