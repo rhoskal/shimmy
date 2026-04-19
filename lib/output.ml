@@ -36,7 +36,7 @@ let print_video_stream (stream : Ffprobe.video_stream) : unit =
   | Some r -> (
       match get_fps r with
       | Some fps -> Printf.printf "  • FrameRate  : %d\n" fps
-      | None -> Printf.printf "  • FrameRate  : unknown\n")
+      | None -> Printf.printf "  • FrameRate  : UNKNOWN\n")
   | None -> ());
   (match stream.duration with
   | Some d -> Printf.printf "  • Duration   : %s\n" (format_duration d)
@@ -96,7 +96,7 @@ let print_format_info (fmt : Ffprobe.format_info) : unit =
   Printf.printf "  • Container  : %s\n"
     (match fmt.format_name with
     | Some "matroska,webm" -> "MKV"
-    | _ -> "unknown")
+    | _ -> "UNKNOWN")
 
 let print_probe_result (result : Ffprobe.probe_result) : unit =
   print_section_header "FILE";
