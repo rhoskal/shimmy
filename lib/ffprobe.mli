@@ -3,10 +3,12 @@ type stream_type = Video | Audio | Subtitle | Data  (** ? **)
 type video_stream = {
   index : int;
   avg_frame_rate : string option;
+  bit_depth : int option;
   codec_name : string;
   duration : float option;
   height : int;
   language : string option;
+  pix_fmt : string option;
   profile : string option;
   width : int;
 }
@@ -27,7 +29,9 @@ type audio_stream = {
 type subtitle_stream = {
   index : int;
   codec_name : string;
+  hearing_impaired : bool;
   language : string option;
+  title : string option;
 }
 (** ? **)
 
@@ -39,7 +43,11 @@ type stream =
   | Subtitle of subtitle_stream
   | Data of data_stream  (** ? **)
 
-type format_info = { filename : string; size : int option }
+type format_info = {
+  filename : string;
+  format_name : string option;
+  size : int option;
+}
 (** ? **)
 
 type probe_result = { streams : stream list; format : format_info }

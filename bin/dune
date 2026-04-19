@@ -1,5 +1,13 @@
 (executable
  (name main)
  (public_name shimmy)
- (modules cli cmd_downmix cmd_dts cmd_dtshd cmd_dtsx cmd_truehd cmd_probe main)
+ (modules
+  cli
+  cmd_downmix
+  cmd_dts
+  cmd_dtshd
+  cmd_dtsx
+  cmd_truehd
+  cmd_probe
+  main)
  (libraries cmdliner shimmy))

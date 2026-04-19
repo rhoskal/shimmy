@@ -5,10 +5,12 @@ type stream_type = Video | Audio | Subtitle | Data
 type video_stream = {
   index : int;
   avg_frame_rate : string option;
+  bit_depth : int option;
   codec_name : string;
   duration : float option;
   height : int;
   language : string option;
+  pix_fmt : string option;
   profile : string option;
   width : int;
 }
@@ -27,7 +29,9 @@ type audio_stream = {
 type subtitle_stream = {
   index : int;
   codec_name : string;
+  hearing_impaired : bool;
   language : string option;
+  title : string option;
 }
 
 type data_stream = { index : int; codec_name : string }
@@ -38,7 +42,12 @@ type stream =
   | Subtitle of subtitle_stream
   | Data of data_stream
 
-type format_info = { filename : string; size : int option }
+type format_info = {
+  filename : string;
+  format_name : string option;
+  size : int option;
+}
+
 type probe_result = { streams : stream list; format : format_info }
 
 (* ===================== *)
@@ -54,11 +63,7 @@ let get_audio_streams result =
 let get_subtitle_streams result =
   List.filter_map (function Subtitle s -> Some s | _ -> None) result.streams
 
-(* ===================== *)
-(* Parsers               *)
-(* ===================== *)
-
-let get_language json =
+let get_tags_language json =
   match member "tags" json with
   | `Assoc tags -> (
       try
@@ -68,14 +73,35 @@ let get_language json =
       with Not_found -> None)
   | _ -> None
 
+let get_tags_title json =
+  match member "tags" json with
+  | `Assoc tags -> (
+      try
+        match List.assoc_opt "title" tags with
+        | Some (`String title) -> Some title
+        | _ -> None
+      with Not_found -> None)
+  | _ -> None
+
+(* ===================== *)
+(* Parsers               *)
+(* ===================== *)
+
 let parse_video_stream json : video_stream =
   {
     index = json |> member "index" |> to_int;
-    avg_frame_rate = json |> member "r_frame_rate" |> to_string_option;
+    avg_frame_rate = json |> member "avg_frame_rate" |> to_string_option;
+    bit_depth =
+      json
+      |> member "bits_per_raw_sample"
+      |> to_string_option
+      |> Option.map int_of_string_opt
+      |> Option.join;
     codec_name = json |> member "codec_name" |> to_string;
     duration = json |> member "duration" |> to_float_option;
     height = json |> member "height" |> to_int;
-    language = get_language json;
+    language = get_tags_language json;
+    pix_fmt = json |> member "pix_fmt" |> to_string_option;
     profile = json |> member "profile" |> to_string_option;
     width = json |> member "width" |> to_int;
   }
@@ -90,7 +116,7 @@ let parse_audio_stream json : audio_stream =
     channels = json |> member "channels" |> to_int_option;
     codec_name = json |> member "codec_name" |> to_string;
     duration = json |> member "duration" |> to_float_option;
-    language = get_language json;
+    language = get_tags_language json;
     profile = json |> member "profile" |> to_string_option;
     sample_rate =
       json |> member "sample_rate" |> to_string_option
@@ -102,7 +128,13 @@ let parse_subtitle_stream json : subtitle_stream =
   {
     index = json |> member "index" |> to_int;
     codec_name = json |> member "codec_name" |> to_string;
-    language = get_language json;
+    hearing_impaired =
+      ( json |> member "disposition" |> member "hearing_impaired" |> to_int
+      |> function
+        | 1 -> true
+        | _ -> false );
+    language = get_tags_language json;
+    title = get_tags_title json;
   }
 
 let parse_data_stream json : data_stream =
@@ -114,6 +146,7 @@ let parse_data_stream json : data_stream =
 let parse_format json =
   {
     filename = json |> member "filename" |> to_string;
+    format_name = json |> member "format_name" |> to_string_option;
     size =
       json |> member "size" |> to_string_option
       |> Option.map int_of_string_opt
@@ -187,7 +220,7 @@ let probe_file filepath =
         let format =
           match member "format" json with
           | `Assoc fmt_json -> parse_format (`Assoc fmt_json)
-          | _ -> { filename = filepath; size = None }
+          | _ -> { filename = filepath; format_name = None; size = None }
         in
         Ok { streams; format }
       with
