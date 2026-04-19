@@ -2,7 +2,7 @@ open Cmdliner
 open Shimmy
 
 let run filepath : (unit, string) result =
-  match Ffprobe.probe_file filepath with
+  match Ffprobe.probe_media_file filepath with
   | Error msg ->
       Printf.eprintf "Error: %s\n%!" msg;
       Error msg

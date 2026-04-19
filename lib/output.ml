@@ -114,21 +114,21 @@ let print_format_info (fmt : Ffprobe.format_info) : unit =
 
 let print_probe_result (result : Ffprobe.probe_result) : unit =
   print_section_header "FORMAT";
-  print_format_info result.format;
+  print_format_info result.format_info;
 
-  let videos = Ffprobe.get_video_streams result in
+  let videos = Ffprobe.video_streams result in
   if List.length videos > 0 then begin
     print_section_header "VIDEO";
     List.iter print_video_stream videos
   end;
 
-  let audios = Ffprobe.get_audio_streams result in
+  let audios = Ffprobe.audio_streams result in
   if List.length audios > 0 then begin
     print_section_header "AUDIO";
     List.iter print_audio_stream audios
   end;
 
-  let subs = Ffprobe.get_subtitle_streams result in
+  let subs = Ffprobe.subtitle_streams result in
   if List.length subs > 0 then begin
     print_section_header "SUBTITLES";
     List.iter print_subtitle_stream subs
@@ -137,8 +137,8 @@ let print_probe_result (result : Ffprobe.probe_result) : unit =
 
 let print_stream_summary (result : Ffprobe.probe_result) : unit =
   Printf.printf "Video: %d stream(s)\n"
-    (List.length (Ffprobe.get_video_streams result));
+    (List.length (Ffprobe.video_streams result));
   Printf.printf "Audio: %d stream(s)\n"
-    (List.length (Ffprobe.get_audio_streams result));
+    (List.length (Ffprobe.audio_streams result));
   Printf.printf "Subtitles: %d stream(s)\n"
-    (List.length (Ffprobe.get_subtitle_streams result))
+    (List.length (Ffprobe.subtitle_streams result))

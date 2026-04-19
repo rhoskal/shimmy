@@ -1,16 +1,3 @@
-type stream_type =
-  | Video
-  | Audio
-  | Subtitle
-  | Data
-      (** Kind of media stream as reported by ffprobe.
-
-          This corresponds to the "codec_type" field in ffprobe JSON:
-          - "video" -> Video
-          - "audio" -> Audio
-          - "subtitle" -> Subtitle
-          - anything else (e.g. "data", "attachment") -> Data *)
-
 type video_stream = {
   index : int;
   avg_frame_rate : string option;
@@ -105,14 +92,14 @@ type format_info = {
       comma-separated list.
     - [size]: File size in bytes. *)
 
-type probe_result = { streams : stream list; format : format_info }
+type probe_result = { streams : stream list; format_info : format_info }
 (** Result of probing a media file with ffprobe.
 
     Contains:
     - [streams]: All streams found in the file.
-    - [format]: Container-level metadata. *)
+    - [format_info]: Container-level metadata. *)
 
-val probe_file : string -> (probe_result, string) Result.t
+val probe_media_file : string -> (probe_result, string) Result.t
 (** Run ffprobe on the given file and parse a subset of its JSON output.
 
     Returns:
@@ -122,11 +109,11 @@ val probe_file : string -> (probe_result, string) Result.t
     The error message is intended for diagnostics and may include stderr output
     or parsing details. *)
 
-val get_video_streams : probe_result -> video_stream list
+val video_streams : probe_result -> video_stream list
 (** Extract all video streams from a probe result. *)
 
-val get_audio_streams : probe_result -> audio_stream list
+val audio_streams : probe_result -> audio_stream list
 (** Extract all audio streams from a probe result. *)
 
-val get_subtitle_streams : probe_result -> subtitle_stream list
+val subtitle_streams : probe_result -> subtitle_stream list
 (** Extract all subtitle streams from a probe result. *)
