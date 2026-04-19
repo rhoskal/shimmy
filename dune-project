@@ -27,7 +27,8 @@
   ocaml
   dune
   (alcotest :with-test)
-  cmdliner)
+  cmdliner
+  yojson)
 
  (tags
   ("add topics" "to describe" your project)))

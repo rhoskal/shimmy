@@ -58,6 +58,7 @@
 
               export LC_ALL=en_US.UTF-8
               export OPAMROOT=$(pwd)/.nix-opam
+              export PATH="$(pwd)/_build/install/default/bin:$PATH"
 
               # One-time initialization (idempotent)
               if [ ! -f "$OPAMROOT/config" ]; then

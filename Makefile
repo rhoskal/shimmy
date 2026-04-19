@@ -17,7 +17,7 @@ help: ## Show this help message
 
 .PHONY: build
 build: ## Build the project
-	dune build
+	dune build @install
 
 .PHONY: clean
 clean: ## Clean build artifacts
