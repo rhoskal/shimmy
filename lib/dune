@@ -1,5 +1,5 @@
 (library
  (public_name shimmy)
  (name shimmy)
- (modules ffmpeg ffprobe mkvmerge output)
+ (modules binaries ffmpeg ffprobe mkvmerge output)
  (libraries unix yojson))

@@ -22,6 +22,7 @@ let cmds =
   ]
 
 let main_cmd =
+  Shimmy.Binaries.check_all ();
   let default = Term.(ret (const (`Help (`Auto, None)))) in
   Cmd.group info ~default cmds
 

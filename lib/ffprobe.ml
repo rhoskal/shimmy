@@ -213,7 +213,7 @@ let capture_output_args prog args =
       Error (if err_msg = "" then "ffprobe exited with error" else err_msg)
 
 let probe_file filepath =
-  let ffprobe_path = "/opt/homebrew/bin/ffprobe" in
+  let ffprobe_path = Binaries.ffprobe_path () in
   let args =
     [
       "-v";

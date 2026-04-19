@@ -28,6 +28,8 @@
             packages =
               with pkgs;
               [
+                ffmpeg
+                mkvtoolnix
                 nixd
                 nixfmt
                 ocaml
