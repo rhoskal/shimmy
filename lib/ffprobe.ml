@@ -6,6 +6,7 @@ type video_stream = {
   index : int;
   avg_frame_rate : string option;
   bit_depth : int option;
+  bitrate : int option;
   codec_name : string;
   height : int;
   language : string option;
@@ -42,6 +43,7 @@ type stream =
   | Data of data_stream
 
 type format_info = {
+  bitrate : int option;
   duration : float option;
   filename : string;
   format_name : string option;
@@ -62,6 +64,16 @@ let get_audio_streams result =
 
 let get_subtitle_streams result =
   List.filter_map (function Subtitle s -> Some s | _ -> None) result.streams
+
+let get_tags_duration json =
+  match member "tags" json with
+  | `Assoc tags -> (
+      try
+        match List.assoc_opt "BPS" tags with
+        | Some (`String lang) -> int_of_string_opt lang
+        | _ -> None
+      with Not_found -> None)
+  | _ -> None
 
 let get_tags_language json =
   match member "tags" json with
@@ -91,6 +103,7 @@ let parse_video_stream json : video_stream =
   {
     index = json |> member "index" |> to_int;
     avg_frame_rate = json |> member "avg_frame_rate" |> to_string_option;
+    bitrate = get_tags_duration json;
     bit_depth =
       json
       |> member "bits_per_raw_sample"
@@ -144,6 +157,10 @@ let parse_data_stream json : data_stream =
 
 let parse_format json =
   {
+    bitrate =
+      json |> member "bit_rate" |> to_string_option
+      |> Option.map int_of_string_opt
+      |> Option.join;
     duration =
       json |> member "duration" |> to_string_option
       |> Option.map float_of_string;
@@ -157,7 +174,7 @@ let parse_format json =
 
 let parse_stream json =
   let codec_type_str =
-    match member "codec_type" json with `String s -> s | _ -> "unknown"
+    match member "codec_type" json with `String s -> s | _ -> "UNKNOWN"
   in
 
   match codec_type_str with
@@ -224,6 +241,7 @@ let probe_file filepath =
           | `Assoc fmt_json -> parse_format (`Assoc fmt_json)
           | _ ->
               {
+                bitrate = None;
                 duration = None;
                 filename = filepath;
                 format_name = None;

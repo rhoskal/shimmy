@@ -7,12 +7,13 @@ let format_duration sec =
 let print_section_header (title : string) : unit =
   Printf.printf "\n=== %s ===\n" title
 
-let get_fps (frame_rate : string) : int option =
+let get_fps (frame_rate : string) : string option =
   match frame_rate with
-  | "24000/1001" -> Some 24
-  | "30000/1001" -> Some 30
-  | "60000/1001" -> Some 60
-  | "0/0" -> Some 0
+  | "24000/1001" -> Some "24p"
+  | "25" -> Some "25p"
+  | "30000/1001" -> Some "30p"
+  | "50" -> Some "50p"
+  | "60000/1001" -> Some "60p"
   | _ -> None
 
 let get_bit_depth (stream : Ffprobe.video_stream) : int =
@@ -32,10 +33,15 @@ let print_video_stream (stream : Ffprobe.video_stream) : unit =
   Printf.printf "  • Codec      : %s\n"
     (String.uppercase_ascii stream.codec_name);
   Printf.printf "  • Resolution : %dx%d\n" stream.width stream.height;
+  (match stream.bitrate with
+  | Some b ->
+      Printf.printf "  • Bitrate    : %.0f kbps\n"
+        (Float.ceil (float_of_int b /. 1000.0))
+  | None -> ());
   (match stream.avg_frame_rate with
   | Some r -> (
       match get_fps r with
-      | Some fps -> Printf.printf "  • FrameRate  : %d\n" fps
+      | Some fps -> Printf.printf "  • FrameRate  : %s\n" fps
       | None -> Printf.printf "  • FrameRate  : UNKNOWN\n")
   | None -> ());
   Printf.printf "  • BitDepth   : %d\n" (get_bit_depth stream);
@@ -55,7 +61,9 @@ let print_audio_stream (stream : Ffprobe.audio_stream) : unit =
   | Some c -> Printf.printf "  • Channels   : %d\n" c
   | None -> ());
   (match stream.bitrate with
-  | Some b -> Printf.printf "  • Bitrate    : %d kbps\n" (b / 1000)
+  | Some b ->
+      Printf.printf "  • Bitrate    : %.0f kbps\n"
+        (Float.ceil (float_of_int b /. 1000.0))
   | None -> ());
   (match stream.sample_rate with
   | Some r -> Printf.printf "  • SampleRate : %d Hz\n" r
@@ -92,6 +100,11 @@ let print_format_info (fmt : Ffprobe.format_info) : unit =
       else
         Printf.printf "  • Size       : %.2f MB\n"
           (float_of_int bytes /. 1_048_576.0)
+  | None -> ());
+  (match fmt.bitrate with
+  | Some b ->
+      Printf.printf "  • Bitrate    : %.0f kbps\n"
+        (Float.ceil (float_of_int b /. 1000.0))
   | None -> ());
   Printf.printf "  • Container  : %s\n"
     (match fmt.format_name with

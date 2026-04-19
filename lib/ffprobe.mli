@@ -15,6 +15,7 @@ type video_stream = {
   index : int;
   avg_frame_rate : string option;
   bit_depth : int option;
+  bitrate : int option;
   codec_name : string;
   height : int;
   language : string option;
@@ -89,6 +90,7 @@ type stream =
           that stream kind. *)
 
 type format_info = {
+  bitrate : int option;
   duration : float option;
   filename : string;
   format_name : string option;
@@ -96,6 +98,7 @@ type format_info = {
 }
 (** Container-level metadata extracted from ffprobe "format".
 
+    - [bitrate]: Bitrate in bits per second.
     - [duration]: Stream duration in seconds.
     - [filename]: Input filename as reported by ffprobe.
     - [format_name]: Container format (e.g. "matroska", "mp4"), possibly a
