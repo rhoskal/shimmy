@@ -1,5 +1,202 @@
 open Yojson.Basic.Util
 
+(* ===================== *)
+(* JSON Parsers          *)
+(* ===================== *)
+
+module Json = struct
+  module Tags = struct
+    type t = Yojson.Basic.t
+
+    let of_json json = json
+
+    let bit_rate t =
+      match t |> member "BPS" |> to_string_option with
+      | None -> None
+      | Some s -> int_of_string_opt s
+
+    let language t = t |> member "language" |> to_string_option
+    let title t = t |> member "title" |> to_string_option
+  end
+
+  module Stream = struct
+    type t = Yojson.Basic.t
+    type kind = Video | Audio | Subtitle | Data
+
+    let of_json json = json
+
+    let tags t : Tags.t option =
+      match t |> member "tags" with
+      | `Assoc _ as obj -> Some (Tags.of_json obj)
+      | _ -> None
+
+    let codec_type t = t |> member "codec_type" |> to_string
+
+    let kind t =
+      match codec_type t with
+      | "video" -> Video
+      | "audio" -> Audio
+      | "subtitle" -> Subtitle
+      | _ -> Data
+  end
+
+  module Video = struct
+    type t = Yojson.Basic.t
+
+    let of_json json = json
+
+    let tags t : Tags.t option =
+      match t |> member "tags" with
+      | `Assoc _ as obj -> Some (Tags.of_json obj)
+      | _ -> None
+
+    let avg_frame_rate t = t |> member "avg_frame_rate" |> to_string_option
+
+    let bit_depth t =
+      match t |> member "bits_per_raw_sample" |> to_string_option with
+      | None -> None
+      | Some s -> int_of_string_opt s
+
+    let bit_rate t =
+      let first_pick =
+        match t |> member "bit_rate" |> to_string_option with
+        | None -> None
+        | Some s -> int_of_string_opt s
+      in
+      match first_pick with
+      | Some _ as result -> result
+      | None -> (
+          match tags t with None -> None | Some tags -> Tags.bit_rate tags)
+
+    let codec_name t = t |> member "codec_name" |> to_string
+    let height t = t |> member "height" |> to_int
+    let index t = t |> member "index" |> to_int
+
+    let language t =
+      match tags t with None -> None | Some tags -> Tags.language tags
+
+    let pix_fmt t = t |> member "pix_fmt" |> to_string_option
+    let profile t = t |> member "profile" |> to_string_option
+    let width t = t |> member "width" |> to_int
+  end
+
+  module Audio = struct
+    type t = Yojson.Basic.t
+
+    let of_json json = json
+
+    let tags t : Tags.t option =
+      match t |> member "tags" with
+      | `Assoc _ as obj -> Some (Tags.of_json obj)
+      | _ -> None
+
+    let bit_rate t =
+      let first_pick =
+        match t |> member "bit_rate" |> to_string_option with
+        | None -> None
+        | Some s -> int_of_string_opt s
+      in
+      match first_pick with
+      | Some _ as result -> result
+      | None -> (
+          match tags t with None -> None | Some tags -> Tags.bit_rate tags)
+
+    let channels t = t |> member "channels" |> to_int_option
+    let codec_name t = t |> member "codec_name" |> to_string
+    let index t = t |> member "index" |> to_int
+
+    let language t =
+      match tags t with None -> None | Some tags -> Tags.language tags
+
+    let profile t = t |> member "profile" |> to_string_option
+
+    let sample_rate t =
+      match t |> member "sample_rate" |> to_string_option with
+      | None -> None
+      | Some s -> int_of_string_opt s
+
+    let title t =
+      match tags t with None -> None | Some tags -> Tags.title tags
+  end
+
+  module Subtitle = struct
+    type t = Yojson.Basic.t
+
+    let of_json json = json
+
+    let tags t : Tags.t option =
+      match t |> member "tags" with
+      | `Assoc _ as obj -> Some (Tags.of_json obj)
+      | _ -> None
+
+    let codec_name t = t |> member "codec_name" |> to_string
+
+    let hearing_impaired t =
+      match
+        t |> member "disposition" |> member "hearing_impaired" |> to_int
+      with
+      | 1 -> true
+      | _ -> false
+
+    let index t = t |> member "index" |> to_int
+
+    let language t =
+      match tags t with None -> None | Some tags -> Tags.language tags
+
+    let title t =
+      match tags t with None -> None | Some tags -> Tags.title tags
+  end
+
+  module Data = struct
+    type t = Yojson.Basic.t
+
+    let of_json json = json
+    let codec_name t = t |> member "codec_name" |> to_string
+    let index t = t |> member "index" |> to_int
+  end
+
+  module Format = struct
+    type t = Yojson.Basic.t
+
+    let of_json json = json
+
+    let tags t : Tags.t option =
+      match t |> member "tags" with
+      | `Assoc _ as obj -> Some (Tags.of_json obj)
+      | _ -> None
+
+    let bit_rate t =
+      match t |> member "bit_rate" |> to_string_option with
+      | None -> None
+      | Some s -> int_of_string_opt s
+
+    let duration t =
+      match t |> member "duration" |> to_string_option with
+      | None -> None
+      | Some s -> ( try Some (float_of_string s) with _ -> None)
+
+    let filename t = t |> member "filename" |> to_string
+    let format_name t = t |> member "format_name" |> to_string_option
+
+    let size t =
+      match t |> member "size" |> to_string_option with
+      | None -> None
+      | Some s -> int_of_string_opt s
+  end
+
+  module SideData = struct
+    type t = Yojson.Basic.t
+
+    let of_json json = json
+
+    (* ... Dolby Vision side data parser ... *)
+  end
+end
+
+(* ===================== *)
+(* Types                 *)
+(* ===================== *)
+
 type video_stream = {
   index : int;
   avg_frame_rate : string option;
@@ -50,247 +247,6 @@ type format_info = {
 
 type probe_result = { streams : stream list; format_info : format_info }
 
-module Json_tags : sig
-  type t
-
-  val of_json : Yojson.Basic.t -> t
-  val bit_rate : t -> int option
-  val language : t -> string option
-  val title : t -> string option
-end = struct
-  type t = Yojson.Basic.t
-
-  let of_json json = json
-
-  let bit_rate t =
-    match t |> member "BPS" |> to_string_option with
-    | None -> None
-    | Some s -> int_of_string_opt s
-
-  let language t = t |> member "language" |> to_string_option
-  let title t = t |> member "title" |> to_string_option
-end
-
-module Json_stream : sig
-  type t
-  type kind = Video | Audio | Subtitle | Data
-
-  val of_json : Yojson.Basic.t -> t
-  val codec_type : t -> string
-  val kind : t -> kind
-end = struct
-  type t = Yojson.Basic.t
-  type kind = Video | Audio | Subtitle | Data
-
-  let of_json json = json
-
-  let tags t : Json_tags.t option =
-    match t |> member "tags" with
-    | `Assoc _ as obj -> Some (Json_tags.of_json obj)
-    | _ -> None
-
-  let codec_type t = t |> member "codec_type" |> to_string
-
-  let kind t =
-    match codec_type t with
-    | "video" -> Video
-    | "audio" -> Audio
-    | "subtitle" -> Subtitle
-    | _ -> Data
-end
-
-module Json_video : sig
-  type t
-
-  val of_json : Yojson.Basic.t -> t
-  val avg_frame_rate : t -> string option
-  val bit_depth : t -> int option
-  val bit_rate : t -> int option
-  val codec_name : t -> string
-  val height : t -> int
-  val index : t -> int
-  val language : t -> string option
-  val pix_fmt : t -> string option
-  val profile : t -> string option
-  val width : t -> int
-end = struct
-  type t = Yojson.Basic.t
-
-  let of_json json = json
-
-  let tags t : Json_tags.t option =
-    match t |> member "tags" with
-    | `Assoc _ as obj -> Some (Json_tags.of_json obj)
-    | _ -> None
-
-  let avg_frame_rate t = t |> member "avg_frame_rate" |> to_string_option
-
-  let bit_depth t =
-    match t |> member "bits_per_raw_sample" |> to_string_option with
-    | None -> None
-    | Some s -> int_of_string_opt s
-
-  let bit_rate t =
-    let first_pick =
-      match t |> member "bit_rate" |> to_string_option with
-      | None -> None
-      | Some s -> int_of_string_opt s
-    in
-    match first_pick with
-    | Some _ as result -> result
-    | None -> (
-        match tags t with None -> None | Some tags -> Json_tags.bit_rate tags)
-
-  let codec_name t = t |> member "codec_name" |> to_string
-  let height t = t |> member "height" |> to_int
-  let index t = t |> member "index" |> to_int
-
-  let language t =
-    match tags t with None -> None | Some tags -> Json_tags.language tags
-
-  let pix_fmt t = t |> member "pix_fmt" |> to_string_option
-  let profile t = t |> member "profile" |> to_string_option
-  let width t = t |> member "width" |> to_int
-end
-
-module Json_audio : sig
-  type t
-
-  val of_json : Yojson.Basic.t -> t
-  val bit_rate : t -> int option
-  val channels : t -> int option
-  val codec_name : t -> string
-  val index : t -> int
-  val language : t -> string option
-  val profile : t -> string option
-  val sample_rate : t -> int option
-  val title : t -> string option
-end = struct
-  type t = Yojson.Basic.t
-
-  let of_json json = json
-
-  let tags t : Json_tags.t option =
-    match t |> member "tags" with
-    | `Assoc _ as obj -> Some (Json_tags.of_json obj)
-    | _ -> None
-
-  let bit_rate t =
-    let first_pick =
-      match t |> member "bit_rate" |> to_string_option with
-      | None -> None
-      | Some s -> int_of_string_opt s
-    in
-    match first_pick with
-    | Some _ as result -> result
-    | None -> (
-        match tags t with None -> None | Some tags -> Json_tags.bit_rate tags)
-
-  let channels t = t |> member "channels" |> to_int_option
-  let codec_name t = t |> member "codec_name" |> to_string
-  let index t = t |> member "index" |> to_int
-
-  let language t =
-    match tags t with None -> None | Some tags -> Json_tags.language tags
-
-  let profile t = t |> member "profile" |> to_string_option
-
-  let sample_rate t =
-    match t |> member "sample_rate" |> to_string_option with
-    | None -> None
-    | Some s -> int_of_string_opt s
-
-  let title t =
-    match tags t with None -> None | Some tags -> Json_tags.title tags
-end
-
-module Json_subtitles : sig
-  type t
-
-  val of_json : Yojson.Basic.t -> t
-  val codec_name : t -> string
-  val hearing_impaired : t -> bool
-  val index : t -> int
-  val language : t -> string option
-  val title : t -> string option
-end = struct
-  type t = Yojson.Basic.t
-
-  let of_json json = json
-
-  let tags t : Json_tags.t option =
-    match t |> member "tags" with
-    | `Assoc _ as obj -> Some (Json_tags.of_json obj)
-    | _ -> None
-
-  let codec_name t = t |> member "codec_name" |> to_string
-
-  let hearing_impaired t =
-    match t |> member "disposition" |> member "hearing_impaired" |> to_int with
-    | 1 -> true
-    | _ -> false
-
-  let index t = t |> member "index" |> to_int
-
-  let language t =
-    match tags t with None -> None | Some tags -> Json_tags.language tags
-
-  let title t =
-    match tags t with None -> None | Some tags -> Json_tags.title tags
-end
-
-module Json_data : sig
-  type t
-
-  val of_json : Yojson.Basic.t -> t
-  val codec_name : t -> string
-  val index : t -> int
-end = struct
-  type t = Yojson.Basic.t
-
-  let of_json json = json
-  let codec_name t = t |> member "codec_name" |> to_string
-  let index t = t |> member "index" |> to_int
-end
-
-module Json_format : sig
-  type t
-
-  val of_json : Yojson.Basic.t -> t
-  val bit_rate : t -> int option
-  val duration : t -> float option
-  val filename : t -> string
-  val format_name : t -> string option
-  val size : t -> int option
-end = struct
-  type t = Yojson.Basic.t
-
-  let of_json json = json
-
-  let tags t : Json_tags.t option =
-    match t |> member "tags" with
-    | `Assoc _ as obj -> Some (Json_tags.of_json obj)
-    | _ -> None
-
-  let bit_rate t =
-    match t |> member "bit_rate" |> to_string_option with
-    | None -> None
-    | Some s -> int_of_string_opt s
-
-  let duration t =
-    match t |> member "duration" |> to_string_option with
-    | None -> None
-    | Some s -> ( try Some (float_of_string s) with _ -> None)
-
-  let filename t = t |> member "filename" |> to_string
-  let format_name t = t |> member "format_name" |> to_string_option
-
-  let size t =
-    match t |> member "size" |> to_string_option with
-    | None -> None
-    | Some s -> int_of_string_opt s
-end
-
 (* ===================== *)
 (* Helpers               *)
 (* ===================== *)
@@ -309,61 +265,61 @@ let subtitle_streams result =
 (* ===================== *)
 
 let parse_video_stream video_json : video_stream =
-  let video = Json_video.of_json video_json in
+  let video = Json.Video.of_json video_json in
   {
-    avg_frame_rate = Json_video.avg_frame_rate video;
-    bit_depth = Json_video.bit_depth video;
-    bitrate = Json_video.bit_rate video;
-    codec_name = Json_video.codec_name video;
-    height = Json_video.height video;
-    index = Json_video.index video;
-    language = Json_video.language video;
-    pix_fmt = Json_video.pix_fmt video;
-    profile = Json_video.profile video;
-    width = Json_video.width video;
+    avg_frame_rate = Json.Video.avg_frame_rate video;
+    bit_depth = Json.Video.bit_depth video;
+    bitrate = Json.Video.bit_rate video;
+    codec_name = Json.Video.codec_name video;
+    height = Json.Video.height video;
+    index = Json.Video.index video;
+    language = Json.Video.language video;
+    pix_fmt = Json.Video.pix_fmt video;
+    profile = Json.Video.profile video;
+    width = Json.Video.width video;
   }
 
 let parse_audio_stream audio_json : audio_stream =
-  let audio = Json_audio.of_json audio_json in
+  let audio = Json.Audio.of_json audio_json in
   {
-    bitrate = Json_audio.bit_rate audio;
-    channels = Json_audio.channels audio;
-    codec_name = Json_audio.codec_name audio;
-    index = Json_audio.index audio;
-    language = Json_audio.language audio;
-    profile = Json_audio.profile audio;
-    sample_rate = Json_audio.sample_rate audio;
-    title = Json_audio.title audio;
+    bitrate = Json.Audio.bit_rate audio;
+    channels = Json.Audio.channels audio;
+    codec_name = Json.Audio.codec_name audio;
+    index = Json.Audio.index audio;
+    language = Json.Audio.language audio;
+    profile = Json.Audio.profile audio;
+    sample_rate = Json.Audio.sample_rate audio;
+    title = Json.Audio.title audio;
   }
 
 let parse_subtitle_stream subs_json : subtitle_stream =
-  let subs = Json_subtitles.of_json subs_json in
+  let subs = Json.Subtitle.of_json subs_json in
   {
-    index = Json_subtitles.index subs;
-    codec_name = Json_subtitles.codec_name subs;
-    hearing_impaired = Json_subtitles.hearing_impaired subs;
-    language = Json_subtitles.language subs;
-    title = Json_subtitles.title subs;
+    index = Json.Subtitle.index subs;
+    codec_name = Json.Subtitle.codec_name subs;
+    hearing_impaired = Json.Subtitle.hearing_impaired subs;
+    language = Json.Subtitle.language subs;
+    title = Json.Subtitle.title subs;
   }
 
 let parse_data_stream data_json : data_stream =
-  let data = Json_data.of_json data_json in
-  { index = Json_data.index data; codec_name = Json_data.codec_name data }
+  let data = Json.Data.of_json data_json in
+  { index = Json.Data.index data; codec_name = Json.Data.codec_name data }
 
 let parse_format_info format_json : format_info =
-  let format = Json_format.of_json format_json in
+  let format = Json.Format.of_json format_json in
   {
-    bitrate = Json_format.bit_rate format;
-    duration = Json_format.duration format;
-    filename = Json_format.filename format;
-    format_name = Json_format.format_name format;
-    size = Json_format.size format;
+    bitrate = Json.Format.bit_rate format;
+    duration = Json.Format.duration format;
+    filename = Json.Format.filename format;
+    format_name = Json.Format.format_name format;
+    size = Json.Format.size format;
   }
 
 let parse_stream_by_type stream_json =
-  let stream = Json_stream.of_json stream_json in
+  let stream = Json.Stream.of_json stream_json in
 
-  match Json_stream.kind stream with
+  match Json.Stream.kind stream with
   | Video -> Video (parse_video_stream stream_json)
   | Audio -> Audio (parse_audio_stream stream_json)
   | Subtitle -> Subtitle (parse_subtitle_stream stream_json)

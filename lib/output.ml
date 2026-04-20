@@ -18,7 +18,6 @@ let get_fps (frame_rate : string) : string option =
 
 let get_bit_depth (stream : Ffprobe.video_stream) : int =
   match stream.bit_depth with
-  | Some bd -> bd
   | None -> (
       match stream.pix_fmt with
       | Some "yuv420p" -> 8
@@ -26,6 +25,7 @@ let get_bit_depth (stream : Ffprobe.video_stream) : int =
       | Some "yuv422p12le" -> 12
       | Some "yuv444p16le" -> 16
       | _ -> 8)
+  | Some bd -> bd
 
 let print_video_stream (stream : Ffprobe.video_stream) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
@@ -35,23 +35,24 @@ let print_video_stream (stream : Ffprobe.video_stream) : unit =
     (String.uppercase_ascii stream.codec_name);
 
   Printf.printf "  • Resolution : %dx%d\n" stream.width stream.height;
+
   (match stream.bitrate with
   | None -> ()
   | Some b ->
       Printf.printf "  • Bitrate    : %.0f kbps\n"
         (Float.ceil (float_of_int b /. 1000.0)));
 
-  (match stream.avg_frame_rate with
-  | None -> ()
-  | Some r -> (
-      match get_fps r with
-      | None -> Printf.printf "  • FrameRate  : UNKNOWN\n"
-      | Some fps -> Printf.printf "  • FrameRate  : %s\n" fps));
-
   Printf.printf "  • BitDepth   : %d\n" (get_bit_depth stream);
-  match stream.profile with
+
+  (match stream.profile with
   | None -> ()
-  | Some p -> Printf.printf "  • Profile    : %s\n" p
+  | Some p -> Printf.printf "  • Profile    : %s\n" p);
+
+  match stream.avg_frame_rate with
+  | None -> ()
+  | Some frame_rate ->
+      Printf.printf "  • FrameRate  : %s\n"
+        (match get_fps frame_rate with None -> "UNKNOWN" | Some fps -> fps)
 
 let print_audio_stream (stream : Ffprobe.audio_stream) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
