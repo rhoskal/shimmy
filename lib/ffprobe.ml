@@ -176,9 +176,15 @@ end = struct
     | _ -> None
 
   let bit_rate t =
-    match t |> member "bit_rate" |> to_string_option with
-    | None -> None
-    | Some s -> int_of_string_opt s
+    let first_pick =
+      match t |> member "bit_rate" |> to_string_option with
+      | None -> None
+      | Some s -> int_of_string_opt s
+    in
+    match first_pick with
+    | Some _ as result -> result
+    | None -> (
+        match tags t with None -> None | Some tags -> Json_tags.bitrate tags)
 
   let channels t = t |> member "channels" |> to_int_option
   let codec_name t = t |> member "codec_name" |> to_string
