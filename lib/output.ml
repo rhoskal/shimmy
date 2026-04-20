@@ -57,13 +57,13 @@ let print_audio_stream (stream : Ffprobe.audio_stream) : unit =
   (match stream.profile with
   | Some p -> Printf.printf "  • Profile    : %s\n" p
   | None -> ());
-  (match stream.channels with
-  | Some c -> Printf.printf "  • Channels   : %d\n" c
-  | None -> ());
   (match stream.bitrate with
   | Some b ->
       Printf.printf "  • Bitrate    : %.0f kbps\n"
         (Float.ceil (float_of_int b /. 1000.0))
+  | None -> ());
+  (match stream.channels with
+  | Some c -> Printf.printf "  • Channels   : %d\n" c
   | None -> ());
   (match stream.sample_rate with
   | Some r -> Printf.printf "  • SampleRate : %d Hz\n" r
