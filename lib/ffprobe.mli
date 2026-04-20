@@ -1,9 +1,21 @@
+type dovi_info = {
+  bl_compatibility_id : int option;
+  bl_present : bool;
+  el_present : bool;
+  level : int option;
+  profile : int;
+  rpu_present : bool;
+  version_major : int option;
+  version_minor : int option;
+}
+
 type video_stream = {
   index : int;
   avg_frame_rate : string option;
   bit_depth : int option;
   bitrate : int option;
   codec_name : string;
+  dovi : dovi_info option;
   height : int;
   language : string option;
   pix_fmt : string option;
@@ -19,6 +31,8 @@ type video_stream = {
     - [bit_depth]: Bits per pixel component, if available (e.g. 8, 10).
     - [bitrate]: Bitrate in bits per second.
     - [codec_name]: Codec identifier (e.g. "h264", "hevc").
+    - [dovi]: Dolby Vision metadata if the stream contains a DOVI configuration
+      record.
     - [height], [width]: Frame dimensions in pixels.
     - [language]: ISO language code from tags (e.g. "eng").
     - [pix_fmt]: Pixel format (e.g. "yuv420p").

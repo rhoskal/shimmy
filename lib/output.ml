@@ -27,6 +27,17 @@ let get_bit_depth (stream : Ffprobe.video_stream) : int =
       | _ -> 8)
   | Some bd -> bd
 
+let dovi_summary (dovi : Ffprobe.dovi_info) : string =
+  let compat =
+    match dovi.bl_compatibility_id with
+    | Some 1 -> " (HDR10)"
+    | Some 2 -> " (SDR)"
+    | Some 4 -> " (HLG)"
+    | Some n -> Printf.sprintf " (compat %d)" n
+    | None -> ""
+  in
+  Printf.sprintf "DV Profile %d%s" dovi.profile compat
+
 let print_video_stream (stream : Ffprobe.video_stream) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
     (match stream.language with None -> "und" | Some lang -> lang);
@@ -41,6 +52,10 @@ let print_video_stream (stream : Ffprobe.video_stream) : unit =
   | Some b ->
       Printf.printf "  • Bitrate    : %.0f kbps\n"
         (Float.ceil (float_of_int b /. 1000.0)));
+
+  (match stream.dovi with
+  | None -> ()
+  | Some dovi -> Printf.printf "  • Metadata   : %s\n" (dovi_summary dovi));
 
   Printf.printf "  • BitDepth   : %d\n" (get_bit_depth stream);
 
