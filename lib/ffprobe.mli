@@ -31,8 +31,7 @@ type video_stream = {
     - [bit_depth]: Bits per pixel component, if available (e.g. 8, 10).
     - [bitrate]: Bitrate in bits per second.
     - [codec_name]: Codec identifier (e.g. "h264", "hevc").
-    - [dovi]: Dolby Vision metadata if the stream contains a DOVI configuration
-      record.
+    - [dovi]: Dolby Vision metadata if present (see {!dovi_info}).
     - [height], [width]: Frame dimensions in pixels.
     - [language]: ISO language code from tags (e.g. "eng").
     - [pix_fmt]: Pixel format (e.g. "yuv420p").
