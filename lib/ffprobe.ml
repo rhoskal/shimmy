@@ -99,8 +99,8 @@ module Json_video : sig
 
   val of_json : Yojson.Basic.t -> t
   val avg_frame_rate : t -> string option
-  val bit_rate : t -> int option
   val bit_depth : t -> int option
+  val bit_rate : t -> int option
   val codec_name : t -> string
   val height : t -> int
   val index : t -> int
@@ -120,13 +120,13 @@ end = struct
 
   let avg_frame_rate t = t |> member "avg_frame_rate" |> to_string_option
 
-  let bit_rate t =
-    match t |> member "bit_rate" |> to_string_option with
+  let bit_depth t =
+    match t |> member "bits_per_raw_sample" |> to_string_option with
     | None -> None
     | Some s -> int_of_string_opt s
 
-  let bit_depth t =
-    match t |> member "bits_per_raw_sample" |> to_string_option with
+  let bit_rate t =
+    match t |> member "bit_rate" |> to_string_option with
     | None -> None
     | Some s -> int_of_string_opt s
 
