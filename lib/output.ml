@@ -29,52 +29,63 @@ let get_bit_depth (stream : Ffprobe.video_stream) : int =
 
 let print_video_stream (stream : Ffprobe.video_stream) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
-    (match stream.language with Some lang -> lang | None -> "und");
+    (match stream.language with None -> "und" | Some lang -> lang);
+
   Printf.printf "  • Codec      : %s\n"
     (String.uppercase_ascii stream.codec_name);
+
   Printf.printf "  • Resolution : %dx%d\n" stream.width stream.height;
   (match stream.bitrate with
+  | None -> ()
   | Some b ->
       Printf.printf "  • Bitrate    : %.0f kbps\n"
-        (Float.ceil (float_of_int b /. 1000.0))
-  | None -> ());
+        (Float.ceil (float_of_int b /. 1000.0)));
+
   (match stream.avg_frame_rate with
+  | None -> ()
   | Some r -> (
       match get_fps r with
-      | Some fps -> Printf.printf "  • FrameRate  : %s\n" fps
-      | None -> Printf.printf "  • FrameRate  : UNKNOWN\n")
-  | None -> ());
+      | None -> Printf.printf "  • FrameRate  : UNKNOWN\n"
+      | Some fps -> Printf.printf "  • FrameRate  : %s\n" fps));
+
   Printf.printf "  • BitDepth   : %d\n" (get_bit_depth stream);
   match stream.profile with
-  | Some p -> Printf.printf "  • Profile    : %s\n" p
   | None -> ()
+  | Some p -> Printf.printf "  • Profile    : %s\n" p
 
 let print_audio_stream (stream : Ffprobe.audio_stream) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
-    (match stream.language with Some lang -> lang | None -> "und");
+    (match stream.language with None -> "und" | Some lang -> lang);
+
   Printf.printf "  • Codec      : %s\n"
     (String.uppercase_ascii stream.codec_name);
+
   (match stream.profile with
-  | Some p -> Printf.printf "  • Profile    : %s\n" p
-  | None -> ());
+  | None -> ()
+  | Some p -> Printf.printf "  • Profile    : %s\n" p);
+
   (match stream.bitrate with
+  | None -> ()
   | Some b ->
       Printf.printf "  • Bitrate    : %.0f kbps\n"
-        (Float.ceil (float_of_int b /. 1000.0))
-  | None -> ());
+        (Float.ceil (float_of_int b /. 1000.0)));
+
   (match stream.channels with
-  | Some c -> Printf.printf "  • Channels   : %d\n" c
-  | None -> ());
-  (match stream.sample_rate with
-  | Some r -> Printf.printf "  • SampleRate : %d Hz\n" r
-  | None -> ());
-  match stream.title with
-  | Some t -> Printf.printf "  • Title      : %s\n" t
   | None -> ()
+  | Some c -> Printf.printf "  • Channels   : %d\n" c);
+
+  (match stream.sample_rate with
+  | None -> ()
+  | Some r -> Printf.printf "  • SampleRate : %d Hz\n" r);
+
+  match stream.title with
+  | None -> ()
+  | Some t -> Printf.printf "  • Title      : %s\n" t
 
 let print_subtitle_stream (stream : Ffprobe.subtitle_stream) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
-    (match stream.language with Some lang -> lang | None -> "und");
+    (match stream.language with None -> "und" | Some lang -> lang);
+
   Printf.printf "  • Codec      : %s\n"
     (match stream.codec_name with
     | "ass" -> "ASS"
@@ -82,30 +93,36 @@ let print_subtitle_stream (stream : Ffprobe.subtitle_stream) : unit =
     | "subrip" -> "SRT"
     | "vobsub" -> "VOBSUB"
     | _ -> "UNKNOWN");
+
   (match stream.title with
-  | Some t -> Printf.printf "  • Title      : %s\n" t
-  | None -> ());
+  | None -> ()
+  | Some t -> Printf.printf "  • Title      : %s\n" t);
+
   Printf.printf "  • SDH        : %b\n" stream.hearing_impaired
 
 let print_format_info (fmt : Ffprobe.format_info) : unit =
   Printf.printf "  • Filename   : %s\n" (Filename.basename fmt.filename);
+
   (match fmt.duration with
-  | Some d -> Printf.printf "  • Duration   : %s\n" (format_duration d)
-  | None -> ());
+  | None -> ()
+  | Some d -> Printf.printf "  • Duration   : %s\n" (format_duration d));
+
   (match fmt.size with
+  | None -> ()
   | Some bytes ->
       if bytes > 1_073_741_824 then
         Printf.printf "  • Size       : %.2f GB\n"
           (float_of_int bytes /. 1_073_741_824.0)
       else
         Printf.printf "  • Size       : %.2f MB\n"
-          (float_of_int bytes /. 1_048_576.0)
-  | None -> ());
+          (float_of_int bytes /. 1_048_576.0));
+
   (match fmt.bitrate with
+  | None -> ()
   | Some b ->
       Printf.printf "  • Bitrate    : %.0f kbps\n"
-        (Float.ceil (float_of_int b /. 1000.0))
-  | None -> ());
+        (Float.ceil (float_of_int b /. 1000.0)));
+
   Printf.printf "  • Container  : %s\n"
     (match fmt.format_name with
     | Some "matroska,webm" -> "MKV"
