@@ -54,7 +54,7 @@ module Json_tags : sig
   type t
 
   val of_json : Yojson.Basic.t -> t
-  val bitrate : t -> int option
+  val bit_rate : t -> int option
   val language : t -> string option
   val title : t -> string option
 end = struct
@@ -62,7 +62,7 @@ end = struct
 
   let of_json json = json
 
-  let bitrate t =
+  let bit_rate t =
     match t |> member "BPS" |> to_string_option with
     | None -> None
     | Some s -> int_of_string_opt s
@@ -139,7 +139,7 @@ end = struct
     match first_pick with
     | Some _ as result -> result
     | None -> (
-        match tags t with None -> None | Some tags -> Json_tags.bitrate tags)
+        match tags t with None -> None | Some tags -> Json_tags.bit_rate tags)
 
   let codec_name t = t |> member "codec_name" |> to_string
   let height t = t |> member "height" |> to_int
@@ -184,7 +184,7 @@ end = struct
     match first_pick with
     | Some _ as result -> result
     | None -> (
-        match tags t with None -> None | Some tags -> Json_tags.bitrate tags)
+        match tags t with None -> None | Some tags -> Json_tags.bit_rate tags)
 
   let channels t = t |> member "channels" |> to_int_option
   let codec_name t = t |> member "codec_name" |> to_string
@@ -257,7 +257,7 @@ module Json_format : sig
   type t
 
   val of_json : Yojson.Basic.t -> t
-  val bitrate : t -> int option
+  val bit_rate : t -> int option
   val duration : t -> float option
   val filename : t -> string
   val format_name : t -> string option
@@ -272,7 +272,7 @@ end = struct
     | `Assoc _ as obj -> Some (Json_tags.of_json obj)
     | _ -> None
 
-  let bitrate t =
+  let bit_rate t =
     match t |> member "bit_rate" |> to_string_option with
     | None -> None
     | Some s -> int_of_string_opt s
@@ -353,7 +353,7 @@ let parse_data_stream data_json : data_stream =
 let parse_format_info format_json : format_info =
   let format = Json_format.of_json format_json in
   {
-    bitrate = Json_format.bitrate format;
+    bitrate = Json_format.bit_rate format;
     duration = Json_format.duration format;
     filename = Json_format.filename format;
     format_name = Json_format.format_name format;
