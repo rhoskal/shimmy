@@ -61,7 +61,12 @@ end = struct
   type t = Yojson.Basic.t
 
   let of_json json = json
-  let bitrate t = t |> member "BPS" |> to_int_option
+
+  let bitrate t =
+    match t |> member "BPS" |> to_string_option with
+    | None -> None
+    | Some s -> int_of_string_opt s
+
   let language t = t |> member "language" |> to_string_option
   let title t = t |> member "title" |> to_string_option
 end
@@ -126,9 +131,15 @@ end = struct
     | Some s -> int_of_string_opt s
 
   let bit_rate t =
-    match t |> member "bit_rate" |> to_string_option with
-    | None -> None
-    | Some s -> int_of_string_opt s
+    let first_pick =
+      match t |> member "bit_rate" |> to_string_option with
+      | None -> None
+      | Some s -> int_of_string_opt s
+    in
+    match first_pick with
+    | Some _ as result -> result
+    | None -> (
+        match tags t with None -> None | Some tags -> Json_tags.bitrate tags)
 
   let codec_name t = t |> member "codec_name" |> to_string
   let height t = t |> member "height" |> to_int
