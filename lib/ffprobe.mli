@@ -17,6 +17,7 @@ type video_stream = {
     - [index]: Zero-based stream index within the container.
     - [avg_frame_rate]: Raw ffprobe string (e.g. "30000/1001"). Not normalized.
     - [bit_depth]: Bits per pixel component, if available (e.g. 8, 10).
+    - [bitrate]: Bitrate in bits per second.
     - [codec_name]: Codec identifier (e.g. "h264", "hevc").
     - [height], [width]: Frame dimensions in pixels.
     - [language]: ISO language code from tags (e.g. "eng").

@@ -50,6 +50,247 @@ type format_info = {
 
 type probe_result = { streams : stream list; format_info : format_info }
 
+module Json_tags : sig
+  type t
+
+  val of_json : Yojson.Basic.t -> t
+  val bitrate : t -> int option
+  val language : t -> string option
+  val title : t -> string option
+end = struct
+  type t = Yojson.Basic.t
+
+  let of_json json = json
+
+  let bitrate t =
+    match t |> member "BPS" |> to_string_option with
+    | None -> None
+    | Some s -> int_of_string_opt s
+
+  let language t = t |> member "language" |> to_string_option
+  let title t = t |> member "title" |> to_string_option
+end
+
+module Json_stream : sig
+  type t
+  type kind = Video | Audio | Subtitle | Data
+
+  val of_json : Yojson.Basic.t -> t
+  val codec_type : t -> string
+  val kind : t -> kind
+end = struct
+  type t = Yojson.Basic.t
+  type kind = Video | Audio | Subtitle | Data
+
+  let of_json json = json
+
+  let tags t : Json_tags.t option =
+    match t |> member "tags" with
+    | `Assoc _ as obj -> Some (Json_tags.of_json obj)
+    | _ -> None
+
+  let codec_type t = t |> member "codec_type" |> to_string
+
+  let kind t =
+    match codec_type t with
+    | "video" -> Video
+    | "audio" -> Audio
+    | "subtitle" -> Subtitle
+    | _ -> Data
+end
+
+module Json_video : sig
+  type t
+
+  val of_json : Yojson.Basic.t -> t
+  val avg_frame_rate : t -> string option
+  val bit_depth : t -> int option
+  val bit_rate : t -> int option
+  val codec_name : t -> string
+  val height : t -> int
+  val index : t -> int
+  val language : t -> string option
+  val pix_fmt : t -> string option
+  val profile : t -> string option
+  val width : t -> int
+end = struct
+  type t = Yojson.Basic.t
+
+  let of_json json = json
+
+  let tags t : Json_tags.t option =
+    match t |> member "tags" with
+    | `Assoc _ as obj -> Some (Json_tags.of_json obj)
+    | _ -> None
+
+  let avg_frame_rate t = t |> member "avg_frame_rate" |> to_string_option
+
+  let bit_depth t =
+    match t |> member "bits_per_raw_sample" |> to_string_option with
+    | None -> None
+    | Some s -> int_of_string_opt s
+
+  let bit_rate t =
+    let first_pick =
+      match t |> member "bit_rate" |> to_string_option with
+      | None -> None
+      | Some s -> int_of_string_opt s
+    in
+    match first_pick with
+    | Some _ as result -> result
+    | None -> (
+        match tags t with None -> None | Some tags -> Json_tags.bitrate tags)
+
+  let codec_name t = t |> member "codec_name" |> to_string
+  let height t = t |> member "height" |> to_int
+  let index t = t |> member "index" |> to_int
+
+  let language t =
+    match tags t with None -> None | Some tags -> Json_tags.language tags
+
+  let pix_fmt t = t |> member "pix_fmt" |> to_string_option
+  let profile t = t |> member "profile" |> to_string_option
+  let width t = t |> member "width" |> to_int
+end
+
+module Json_audio : sig
+  type t
+
+  val of_json : Yojson.Basic.t -> t
+  val bit_rate : t -> int option
+  val channels : t -> int option
+  val codec_name : t -> string
+  val index : t -> int
+  val language : t -> string option
+  val profile : t -> string option
+  val sample_rate : t -> int option
+  val title : t -> string option
+end = struct
+  type t = Yojson.Basic.t
+
+  let of_json json = json
+
+  let tags t : Json_tags.t option =
+    match t |> member "tags" with
+    | `Assoc _ as obj -> Some (Json_tags.of_json obj)
+    | _ -> None
+
+  let bit_rate t =
+    let first_pick =
+      match t |> member "bit_rate" |> to_string_option with
+      | None -> None
+      | Some s -> int_of_string_opt s
+    in
+    match first_pick with
+    | Some _ as result -> result
+    | None -> (
+        match tags t with None -> None | Some tags -> Json_tags.bitrate tags)
+
+  let channels t = t |> member "channels" |> to_int_option
+  let codec_name t = t |> member "codec_name" |> to_string
+  let index t = t |> member "index" |> to_int
+
+  let language t =
+    match tags t with None -> None | Some tags -> Json_tags.language tags
+
+  let profile t = t |> member "profile" |> to_string_option
+
+  let sample_rate t =
+    match t |> member "sample_rate" |> to_string_option with
+    | None -> None
+    | Some s -> int_of_string_opt s
+
+  let title t =
+    match tags t with None -> None | Some tags -> Json_tags.title tags
+end
+
+module Json_subtitles : sig
+  type t
+
+  val of_json : Yojson.Basic.t -> t
+  val codec_name : t -> string
+  val hearing_impaired : t -> bool
+  val index : t -> int
+  val language : t -> string option
+  val title : t -> string option
+end = struct
+  type t = Yojson.Basic.t
+
+  let of_json json = json
+
+  let tags t : Json_tags.t option =
+    match t |> member "tags" with
+    | `Assoc _ as obj -> Some (Json_tags.of_json obj)
+    | _ -> None
+
+  let codec_name t = t |> member "codec_name" |> to_string
+
+  let hearing_impaired t =
+    match t |> member "disposition" |> member "hearing_impaired" |> to_int with
+    | 1 -> true
+    | _ -> false
+
+  let index t = t |> member "index" |> to_int
+
+  let language t =
+    match tags t with None -> None | Some tags -> Json_tags.language tags
+
+  let title t =
+    match tags t with None -> None | Some tags -> Json_tags.title tags
+end
+
+module Json_data : sig
+  type t
+
+  val of_json : Yojson.Basic.t -> t
+  val codec_name : t -> string
+  val index : t -> int
+end = struct
+  type t = Yojson.Basic.t
+
+  let of_json json = json
+  let codec_name t = t |> member "codec_name" |> to_string
+  let index t = t |> member "index" |> to_int
+end
+
+module Json_format : sig
+  type t
+
+  val of_json : Yojson.Basic.t -> t
+  val bitrate : t -> int option
+  val duration : t -> float option
+  val filename : t -> string
+  val format_name : t -> string option
+  val size : t -> int option
+end = struct
+  type t = Yojson.Basic.t
+
+  let of_json json = json
+
+  let tags t : Json_tags.t option =
+    match t |> member "tags" with
+    | `Assoc _ as obj -> Some (Json_tags.of_json obj)
+    | _ -> None
+
+  let bitrate t =
+    match t |> member "bit_rate" |> to_string_option with
+    | None -> None
+    | Some s -> int_of_string_opt s
+
+  let duration t =
+    match t |> member "duration" |> to_string_option with
+    | None -> None
+    | Some s -> ( try Some (float_of_string s) with _ -> None)
+
+  let filename t = t |> member "filename" |> to_string
+  let format_name t = t |> member "format_name" |> to_string_option
+
+  let size t =
+    match t |> member "size" |> to_string_option with
+    | None -> None
+    | Some s -> int_of_string_opt s
+end
+
 (* ===================== *)
 (* Helpers               *)
 (* ===================== *)
@@ -63,123 +304,70 @@ let audio_streams result =
 let subtitle_streams result =
   List.filter_map (function Subtitle s -> Some s | _ -> None) result.streams
 
-let get_tags_duration tags_json =
-  match member "tags" tags_json with
-  | `Assoc tags -> (
-      try
-        match List.assoc_opt "BPS" tags with
-        | Some (`String lang) -> int_of_string_opt lang
-        | _ -> None
-      with Not_found -> None)
-  | _ -> None
-
-let get_tags_language tags_json =
-  match member "tags" tags_json with
-  | `Assoc tags -> (
-      try
-        match List.assoc_opt "language" tags with
-        | Some (`String lang) -> Some lang
-        | _ -> None
-      with Not_found -> None)
-  | _ -> None
-
-let get_tags_title tags_json =
-  match member "tags" tags_json with
-  | `Assoc tags -> (
-      try
-        match List.assoc_opt "title" tags with
-        | Some (`String title) -> Some title
-        | _ -> None
-      with Not_found -> None)
-  | _ -> None
-
 (* ===================== *)
 (* Parsers               *)
 (* ===================== *)
 
 let parse_video_stream video_json : video_stream =
+  let video = Json_video.of_json video_json in
   {
-    index = video_json |> member "index" |> to_int;
-    avg_frame_rate = video_json |> member "avg_frame_rate" |> to_string_option;
-    bitrate = get_tags_duration video_json;
-    bit_depth =
-      video_json
-      |> member "bits_per_raw_sample"
-      |> to_string_option
-      |> Option.map int_of_string_opt
-      |> Option.join;
-    codec_name = video_json |> member "codec_name" |> to_string;
-    height = video_json |> member "height" |> to_int;
-    language = get_tags_language video_json;
-    pix_fmt = video_json |> member "pix_fmt" |> to_string_option;
-    profile = video_json |> member "profile" |> to_string_option;
-    width = video_json |> member "width" |> to_int;
+    avg_frame_rate = Json_video.avg_frame_rate video;
+    bit_depth = Json_video.bit_depth video;
+    bitrate = Json_video.bit_rate video;
+    codec_name = Json_video.codec_name video;
+    height = Json_video.height video;
+    index = Json_video.index video;
+    language = Json_video.language video;
+    pix_fmt = Json_video.pix_fmt video;
+    profile = Json_video.profile video;
+    width = Json_video.width video;
   }
 
 let parse_audio_stream audio_json : audio_stream =
+  let audio = Json_audio.of_json audio_json in
   {
-    index = audio_json |> member "index" |> to_int;
-    bitrate =
-      audio_json |> member "bit_rate" |> to_string_option
-      |> Option.map int_of_string_opt
-      |> Option.join;
-    channels = audio_json |> member "channels" |> to_int_option;
-    codec_name = audio_json |> member "codec_name" |> to_string;
-    language = get_tags_language audio_json;
-    profile = audio_json |> member "profile" |> to_string_option;
-    sample_rate =
-      audio_json |> member "sample_rate" |> to_string_option
-      |> Option.map int_of_string_opt
-      |> Option.join;
-    title = get_tags_title audio_json;
+    bitrate = Json_audio.bit_rate audio;
+    channels = Json_audio.channels audio;
+    codec_name = Json_audio.codec_name audio;
+    index = Json_audio.index audio;
+    language = Json_audio.language audio;
+    profile = Json_audio.profile audio;
+    sample_rate = Json_audio.sample_rate audio;
+    title = Json_audio.title audio;
   }
 
 let parse_subtitle_stream subs_json : subtitle_stream =
+  let subs = Json_subtitles.of_json subs_json in
   {
-    index = subs_json |> member "index" |> to_int;
-    codec_name = subs_json |> member "codec_name" |> to_string;
-    hearing_impaired =
-      ( subs_json |> member "disposition" |> member "hearing_impaired" |> to_int
-      |> function
-        | 1 -> true
-        | _ -> false );
-    language = get_tags_language subs_json;
-    title = get_tags_title subs_json;
+    index = Json_subtitles.index subs;
+    codec_name = Json_subtitles.codec_name subs;
+    hearing_impaired = Json_subtitles.hearing_impaired subs;
+    language = Json_subtitles.language subs;
+    title = Json_subtitles.title subs;
   }
 
 let parse_data_stream data_json : data_stream =
-  {
-    index = data_json |> member "index" |> to_int;
-    codec_name = data_json |> member "codec_name" |> to_string;
-  }
+  let data = Json_data.of_json data_json in
+  { index = Json_data.index data; codec_name = Json_data.codec_name data }
 
-let parse_format_info format_json =
+let parse_format_info format_json : format_info =
+  let format = Json_format.of_json format_json in
   {
-    bitrate =
-      format_json |> member "bit_rate" |> to_string_option
-      |> Option.map int_of_string_opt
-      |> Option.join;
-    duration =
-      format_json |> member "duration" |> to_string_option
-      |> Option.map float_of_string;
-    filename = format_json |> member "filename" |> to_string;
-    format_name = format_json |> member "format_name" |> to_string_option;
-    size =
-      format_json |> member "size" |> to_string_option
-      |> Option.map int_of_string_opt
-      |> Option.join;
+    bitrate = Json_format.bitrate format;
+    duration = Json_format.duration format;
+    filename = Json_format.filename format;
+    format_name = Json_format.format_name format;
+    size = Json_format.size format;
   }
 
 let parse_stream_by_type stream_json =
-  let codec_type_str =
-    match member "codec_type" stream_json with `String s -> s | _ -> "UNKNOWN"
-  in
+  let stream = Json_stream.of_json stream_json in
 
-  match codec_type_str with
-  | "video" -> Video (parse_video_stream stream_json)
-  | "audio" -> Audio (parse_audio_stream stream_json)
-  | "subtitle" -> Subtitle (parse_subtitle_stream stream_json)
-  | _ -> Data (parse_data_stream stream_json)
+  match Json_stream.kind stream with
+  | Video -> Video (parse_video_stream stream_json)
+  | Audio -> Audio (parse_audio_stream stream_json)
+  | Subtitle -> Subtitle (parse_subtitle_stream stream_json)
+  | Data -> Data (parse_data_stream stream_json)
 
 (* ===================== *)
 (* Main                  *)
