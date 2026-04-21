@@ -9,6 +9,22 @@ type dovi_info = {
   version_minor : int option;
 }
 
+type hdr_type =
+  | DolbyVision of dovi_info
+  | HDR10Plus
+  | HDR10
+  | HLG
+  | SDR
+  | Unknown
+      (** HDR metadata / type for a video stream.
+
+          - [DolbyVision] : Dolby Vision (with detailed info)
+          - [HDR10Plus] : HDR10+ dynamic metadata
+          - [HDR10] : Static HDR10 (PQ transfer function)
+          - [HLG] : Hybrid Log-Gamma
+          - [SDR] : Standard Dynamic Range (explicitly detected)
+          - [Unknown] : Could not determine HDR status *)
+
 type video_stream = {
   index : int;
   avg_frame_rate : string option;
@@ -16,6 +32,7 @@ type video_stream = {
   bitrate : int option;
   codec_name : string;
   dovi : dovi_info option;
+  hdr : hdr_type option;
   height : int;
   language : string option;
   pix_fmt : string option;
