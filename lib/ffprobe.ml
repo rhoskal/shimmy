@@ -165,9 +165,9 @@ module Json = struct
         | Some s -> int_of_string_opt s
       in
       match first_pick with
-      | Some _ as result -> result
       | None -> (
           match tags t with None -> None | Some tags -> Tags.bit_rate tags)
+      | Some _ as result -> result
 
     let codec_name t = t |> member "codec_name" |> to_string
 
@@ -220,9 +220,9 @@ module Json = struct
         | Some s -> int_of_string_opt s
       in
       match first_pick with
-      | Some _ as result -> result
       | None -> (
           match tags t with None -> None | Some tags -> Tags.bit_rate tags)
+      | Some _ as result -> result
 
     let channels t = t |> member "channels" |> to_int_option
     let codec_name t = t |> member "codec_name" |> to_string
