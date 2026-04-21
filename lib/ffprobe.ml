@@ -1,6 +1,72 @@
 open Yojson.Basic.Util
 
 (* ===================== *)
+(* Types                 *)
+(* ===================== *)
+
+type dovi_info = {
+  bl_compatibility_id : int option;
+  bl_present : bool;
+  el_present : bool;
+  level : int option;
+  profile : int;
+  rpu_present : bool;
+  version_major : int option;
+  version_minor : int option;
+}
+
+type video_stream = {
+  index : int;
+  avg_frame_rate : string option;
+  bit_depth : int option;
+  bitrate : int option;
+  codec_name : string;
+  dovi : dovi_info option;
+  height : int;
+  language : string option;
+  pix_fmt : string option;
+  profile : string option;
+  width : int;
+}
+
+type audio_stream = {
+  index : int;
+  bitrate : int option;
+  channels : int option;
+  codec_name : string;
+  language : string option;
+  profile : string option;
+  sample_rate : int option;
+  title : string option;
+}
+
+type subtitle_stream = {
+  index : int;
+  codec_name : string;
+  hearing_impaired : bool;
+  language : string option;
+  title : string option;
+}
+
+type data_stream = { index : int; codec_name : string }
+
+type stream =
+  | Video of video_stream
+  | Audio of audio_stream
+  | Subtitle of subtitle_stream
+  | Data of data_stream
+
+type format_info = {
+  bitrate : int option;
+  duration : float option;
+  filename : string;
+  format_name : string option;
+  size : int option;
+}
+
+type probe_result = { streams : stream list; format_info : format_info }
+
+(* ===================== *)
 (* JSON Parsers          *)
 (* ===================== *)
 
@@ -40,6 +106,41 @@ module Json = struct
       | _ -> Data
   end
 
+  module SideData = struct
+    type t = Yojson.Basic.t
+
+    let of_json json = json
+    let side_data_type t = t |> member "side_data_type" |> to_string_option
+
+    let bl_present t =
+      match t |> member "bl_present_flag" |> to_int_option with
+      | Some 1 -> true
+      | _ -> false
+
+    let dv_bl_compatibility_id t =
+      t |> member "dv_bl_signal_compatibility_id" |> to_int_option
+
+    let dv_level t = t |> member "dv_level" |> to_int_option
+    let dv_profile t = t |> member "dv_profile" |> to_int_option
+    let dv_version_major t = t |> member "dv_version_major" |> to_int_option
+    let dv_version_minor t = t |> member "dv_version_minor" |> to_int_option
+
+    let el_present t =
+      match t |> member "el_present_flag" |> to_int_option with
+      | Some 1 -> true
+      | _ -> false
+
+    let is_dovi t =
+      match side_data_type t with
+      | Some "DOVI configuration record" -> true
+      | _ -> false
+
+    let rpu_present t =
+      match t |> member "rpu_present_flag" |> to_int_option with
+      | Some 1 -> true
+      | _ -> false
+  end
+
   module Video = struct
     type t = Yojson.Basic.t
 
@@ -64,11 +165,33 @@ module Json = struct
         | Some s -> int_of_string_opt s
       in
       match first_pick with
-      | Some _ as result -> result
       | None -> (
           match tags t with None -> None | Some tags -> Tags.bit_rate tags)
+      | Some _ as result -> result
 
     let codec_name t = t |> member "codec_name" |> to_string
+
+    let dovi t =
+      match t |> member "side_data_list" with
+      | `List side_list ->
+          side_list
+          |> List.find_opt (fun sd ->
+              let sd' = SideData.of_json sd in
+              SideData.is_dovi sd')
+          |> Option.map (fun sd ->
+              let sd' = SideData.of_json sd in
+              {
+                bl_compatibility_id = SideData.dv_bl_compatibility_id sd';
+                bl_present = SideData.bl_present sd';
+                el_present = SideData.el_present sd';
+                level = SideData.dv_level sd';
+                profile = SideData.dv_profile sd' |> Option.value ~default:0;
+                rpu_present = SideData.rpu_present sd';
+                version_major = SideData.dv_version_major sd';
+                version_minor = SideData.dv_version_minor sd';
+              })
+      | _ -> None
+
     let height t = t |> member "height" |> to_int
     let index t = t |> member "index" |> to_int
 
@@ -97,9 +220,9 @@ module Json = struct
         | Some s -> int_of_string_opt s
       in
       match first_pick with
-      | Some _ as result -> result
       | None -> (
           match tags t with None -> None | Some tags -> Tags.bit_rate tags)
+      | Some _ as result -> result
 
     let channels t = t |> member "channels" |> to_int_option
     let codec_name t = t |> member "codec_name" |> to_string
@@ -183,69 +306,7 @@ module Json = struct
       | None -> None
       | Some s -> int_of_string_opt s
   end
-
-  module SideData = struct
-    type t = Yojson.Basic.t
-
-    let of_json json = json
-
-    (* ... Dolby Vision side data parser ... *)
-  end
 end
-
-(* ===================== *)
-(* Types                 *)
-(* ===================== *)
-
-type video_stream = {
-  index : int;
-  avg_frame_rate : string option;
-  bit_depth : int option;
-  bitrate : int option;
-  codec_name : string;
-  height : int;
-  language : string option;
-  pix_fmt : string option;
-  profile : string option;
-  width : int;
-}
-
-type audio_stream = {
-  index : int;
-  bitrate : int option;
-  channels : int option;
-  codec_name : string;
-  language : string option;
-  profile : string option;
-  sample_rate : int option;
-  title : string option;
-}
-
-type subtitle_stream = {
-  index : int;
-  codec_name : string;
-  hearing_impaired : bool;
-  language : string option;
-  title : string option;
-}
-
-type data_stream = { index : int; codec_name : string }
-
-type stream =
-  | Video of video_stream
-  | Audio of audio_stream
-  | Subtitle of subtitle_stream
-  | Data of data_stream
-
-type format_info = {
-  bitrate : int option;
-  duration : float option;
-  filename : string;
-  format_name : string option;
-  size : int option;
-}
-
-type probe_result = { streams : stream list; format_info : format_info }
 
 (* ===================== *)
 (* Helpers               *)
@@ -271,6 +332,7 @@ let parse_video_stream video_json : video_stream =
     bit_depth = Json.Video.bit_depth video;
     bitrate = Json.Video.bit_rate video;
     codec_name = Json.Video.codec_name video;
+    dovi = Json.Video.dovi video;
     height = Json.Video.height video;
     index = Json.Video.index video;
     language = Json.Video.language video;
