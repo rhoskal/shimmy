@@ -40,8 +40,10 @@ type video_stream = {
 type audio_stream = {
   index : int;
   bitrate : int option;
+  channel_layout : float option;
   channels : int option;
   codec_name : string;
+  is_atmos : bool option;
   language : string option;
   profile : string option;
   sample_rate : int option;
@@ -51,6 +53,7 @@ type audio_stream = {
 
     - [index]: Zero-based stream index.
     - [bitrate]: Bitrate in bits per second.
+    - [channel_layout]: Output channel layout (e.g. 5.1).
     - [channels]: Number of audio channels (e.g. 2, 6).
     - [codec_name]: Codec identifier (e.g. "aac", "opus").
     - [language]: ISO language code from tags.

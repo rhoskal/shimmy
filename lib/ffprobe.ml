@@ -32,8 +32,10 @@ type video_stream = {
 type audio_stream = {
   index : int;
   bitrate : int option;
+  channel_layout : float option;
   channels : int option;
   codec_name : string;
+  is_atmos : bool option;
   language : string option;
   profile : string option;
   sample_rate : int option;
@@ -224,6 +226,17 @@ module Json = struct
           match tags t with None -> None | Some tags -> Tags.bit_rate tags)
       | Some _ as result -> result
 
+    let channel_layout t =
+      match t |> member "channel_layout" |> to_string_option with
+      | None -> None
+      | Some s ->
+          if String.starts_with ~prefix:"9.1" s then Some 9.1
+          else if String.starts_with ~prefix:"7.1" s then Some 7.1
+          else if String.starts_with ~prefix:"5.1" s then Some 5.1
+          else if String.starts_with ~prefix:"3.0" s then Some 3.0
+          else if String.starts_with ~prefix:"2.0" s then Some 2.0
+          else None
+
     let channels t = t |> member "channels" |> to_int_option
     let codec_name t = t |> member "codec_name" |> to_string
     let index t = t |> member "index" |> to_int
@@ -232,6 +245,13 @@ module Json = struct
       match tags t with None -> None | Some tags -> Tags.language tags
 
     let profile t = t |> member "profile" |> to_string_option
+
+    let is_atmos t =
+      Option.map
+        (fun p ->
+          let re = Re.compile (Re.str "Atmos") in
+          Re.execp re p)
+        (profile t)
 
     let sample_rate t =
       match t |> member "sample_rate" |> to_string_option with
@@ -345,9 +365,11 @@ let parse_audio_stream audio_json : audio_stream =
   let audio = Json.Audio.of_json audio_json in
   {
     bitrate = Json.Audio.bit_rate audio;
+    channel_layout = Json.Audio.channel_layout audio;
     channels = Json.Audio.channels audio;
     codec_name = Json.Audio.codec_name audio;
     index = Json.Audio.index audio;
+    is_atmos = Json.Audio.is_atmos audio;
     language = Json.Audio.language audio;
     profile = Json.Audio.profile audio;
     sample_rate = Json.Audio.sample_rate audio;

@@ -28,6 +28,7 @@
   dune
   (alcotest :with-test)
   cmdliner
+  re
   yojson)
 
  (tags

@@ -1,6 +1,6 @@
 # Shimmy
 
-Take high-fidelity audio formats (DTS-HD, DTS:X, TrueHD) and convert them into a universally compatible format (EAC3) for mobile playback, preserving the original audio track.
+Take high-fidelity audio formats (`DTS-HD MA`, `DTS:X`, `TrueHD`) and convert them into a universally compatible format (EAC3) for mobile playback, preserving the original audio track.
 
 ### Development setup
 

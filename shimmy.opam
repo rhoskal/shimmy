@@ -13,6 +13,7 @@ depends: [
   "dune" {>= "3.22"}
   "alcotest" {with-test}
   "cmdliner"
+  "re"
   "yojson"
   "odoc" {with-doc}
 ]
