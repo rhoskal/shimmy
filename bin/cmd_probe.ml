@@ -11,11 +11,11 @@ let run filepath : (unit, string) result =
       Ok ()
 
 let file_arg =
-  let doc = "Path to the media file to probe" in
+  let doc = "Path to the media file" in
   Arg.(required & pos 0 (some non_dir_file) None & info [] ~docv:"PATH" ~doc)
 
 let cmd =
   let doc = "Probe a media file and display stream information" in
   let info = Cmd.info "probe" ~doc in
 
-  Cmd.v info Term.(const run $ file_arg)
+  Cmd.make info Term.(const run $ file_arg)
