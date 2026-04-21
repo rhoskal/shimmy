@@ -15,14 +15,6 @@ type dovi_info = {
   version_minor : int option;
 }
 
-type hdr_type =
-  | DolbyVision of dovi_info
-  | HDR10Plus
-  | HDR10
-  | HLG
-  | SDR
-  | Unknown
-
 type video_stream = {
   index : int;
   avg_frame_rate : string option;
@@ -30,7 +22,6 @@ type video_stream = {
   bitrate : int option;
   codec_name : string;
   dovi : dovi_info option;
-  hdr : hdr_type option;
   height : int;
   language : string option;
   pix_fmt : string option;
@@ -139,25 +130,10 @@ module Json = struct
       | Some 1 -> true
       | _ -> false
 
-    let is_content_light_level t =
-      side_data_type t = Some "Content light level metadata"
-
     let is_dovi t =
       match side_data_type t with
       | Some "DOVI configuration record" -> true
       | _ -> false
-
-    let is_hdr10plus t =
-      match side_data_type t with
-      | Some s ->
-          String.starts_with ~prefix:"HDR Dynamic Metadata SMPTE2094-40" s
-          || s = "HDR10+"
-          || s = "HDR Dynamic Metadata SMPTE 2094-40"
-          (* slight variation *)
-      | None -> false
-
-    let is_mastering_display t =
-      side_data_type t = Some "Mastering display metadata"
 
     let rpu_present t =
       match t |> member "rpu_present_flag" |> to_int_option with
@@ -215,34 +191,6 @@ module Json = struct
                 version_minor = SideData.dv_version_minor sd';
               })
       | _ -> None
-
-    let hdr_type t : hdr_type option =
-      (* Reuse the existing dovi parser - it already knows how to find and parse DOVI *)
-      let dovi_opt = dovi t in
-
-      (* Check for HDR10+ in side_data_list *)
-      let stream_side_data =
-        match t |> member "side_data_list" with `List lst -> lst | _ -> []
-      in
-
-      let has_hdr10plus =
-        List.exists
-          (fun sd ->
-            let sd' = SideData.of_json sd in
-            SideData.is_hdr10plus sd')
-          stream_side_data
-      in
-
-      (* Color transfer is the most reliable fallback for HDR detection *)
-      let color_transfer = t |> member "color_transfer" |> to_string_option in
-
-      match (dovi_opt, has_hdr10plus, color_transfer) with
-      | Some dovi, _, _ -> Some (DolbyVision dovi)
-      | None, true, _ -> Some HDR10Plus
-      | None, false, Some "smpte2084" -> Some HDR10
-      | None, false, Some "arib-std-b67" -> Some HLG
-      | None, false, Some ("bt709" | "bt470bg" | "smpte170m") -> Some SDR
-      | _ -> Some Unknown
 
     let height t = t |> member "height" |> to_int
     let index t = t |> member "index" |> to_int
@@ -385,7 +333,6 @@ let parse_video_stream video_json : video_stream =
     bitrate = Json.Video.bit_rate video;
     codec_name = Json.Video.codec_name video;
     dovi = Json.Video.dovi video;
-    hdr = Json.Video.hdr_type video;
     height = Json.Video.height video;
     index = Json.Video.index video;
     language = Json.Video.language video;

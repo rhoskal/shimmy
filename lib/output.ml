@@ -27,22 +27,6 @@ let get_bit_depth (stream : Ffprobe.video_stream) : int =
       | _ -> 8)
   | Some bd -> bd
 
-let hdr_summary (stream : Ffprobe.video_stream) : string option =
-  match stream.hdr with
-  | None | Some Unknown -> None
-  | Some SDR -> Some "SDR"
-  | Some HLG -> Some "HLG"
-  | Some HDR10 -> Some "HDR10"
-  | Some HDR10Plus -> Some "HDR10+"
-  | Some (DolbyVision dovi) ->
-      let suffix =
-        match dovi.bl_compatibility_id with
-        | Some 1 -> " HDR10"
-        | Some 4 -> " HLG"
-        | _ -> "" (* plain DV or other compatibility *)
-      in
-      Some ("DV" ^ suffix)
-
 let print_video_stream (stream : Ffprobe.video_stream) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
     (match stream.language with None -> "und" | Some lang -> lang);
@@ -57,10 +41,6 @@ let print_video_stream (stream : Ffprobe.video_stream) : unit =
   | Some b ->
       Printf.printf "  • Bitrate    : %.0f kbps\n"
         (Float.ceil (float_of_int b /. 1000.0)));
-
-  (match hdr_summary stream with
-  | None -> ()
-  | Some text -> Printf.printf "  • HDR        : %s\n" text);
 
   Printf.printf "  • BitDepth   : %d\n" (get_bit_depth stream);
 
