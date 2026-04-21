@@ -162,7 +162,7 @@ let file_arg =
   Arg.(required & pos 0 (some non_dir_file) None & info [] ~docv:"PATH" ~doc)
 
 let cmd =
-  let doc = "Append EAC3 audio stream for compatibility" in
+  let doc = "Append EAC3 5.1 audio stream for compatibility" in
   let info = Cmd.info "dtshd" ~doc in
 
   Cmd.make info Term.(const run $ file_arg)
