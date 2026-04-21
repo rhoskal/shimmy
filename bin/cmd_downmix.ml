@@ -95,9 +95,7 @@ let run filepath : (unit, string) result =
       (String.sub base 0 dot, String.sub base dot (String.length base - dot))
     with Not_found -> (base, "")
   in
-  let temp_file =
-    Filename.concat dir (Printf.sprintf "%s_downmixed%s" name ext)
-  in
+  let temp_file = Filename.concat dir (Printf.sprintf "%s_temp%s" name ext) in
   let final_file = mk_final_filename filepath in
 
   (* 5. Build and run FFmpeg *)
@@ -164,7 +162,7 @@ let file_arg =
   Arg.(required & pos 0 (some non_dir_file) None & info [] ~docv:"PATH" ~doc)
 
 let cmd =
-  let doc = "Downmix EAC-3 7.1 stream to EAC-3 5.1" in
+  let doc = "Downmix EAC3 7.1 stream to EAC3 5.1" in
   let info = Cmd.info "downmix" ~doc in
 
   Cmd.make info Term.(const run $ file_arg)
