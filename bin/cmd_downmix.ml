@@ -28,6 +28,26 @@ let run_command (argv : string array) : (unit, string) result =
            (Unix.error_message err))
   | e -> Error (Printexc.to_string e)
 
+let mk_final_filename (path : string) : string =
+  let dir = Filename.dirname path in
+  let base = Filename.basename path in
+  let name, ext =
+    try
+      let dot = String.rindex base '.' in
+      let stem = String.sub base 0 dot in
+      let ext = String.sub base dot (String.length base - dot) in
+      (stem, ext)
+    with Not_found -> (base, "")
+  in
+  (* Remove old release group: everything after the last '-' before the extension *)
+  let clean_name =
+    try
+      let last_dash = String.rindex name '-' in
+      String.sub name 0 last_dash
+    with Not_found -> name
+  in
+  Filename.concat dir (clean_name ^ "-rhoskal" ^ ext)
+
 let run filepath : (unit, string) result =
   match Ffprobe.probe_media_file filepath with
   | Error msg ->
@@ -69,25 +89,45 @@ let run filepath : (unit, string) result =
               let temp_file =
                 Filename.concat dir (Printf.sprintf "%s_downmixed%s" name ext)
               in
+              let final_file = mk_final_filename filepath in
 
-              Printf.printf "Running FFmpeg...\n!";
+              Printf.printf "Running ffmpeg...\n%!";
 
               (* Build FFmpeg command *)
               let bitrate_k = Printf.sprintf "%d" (bitrate / 1000) in
               let ffmpeg_argv =
                 [|
-                  Printf.sprintf "ffmpeg -i %s" filepath;
-                  "-loglevel fatal";
-                  "-map 0:v:0 -c:v copy";
-                  "-map 0:a:0 -c:a:0 copy";
-                  Printf.sprintf "-map 0:a:0 -c:a:1 eac3 -b:a:1 %sk -ac:a:1 6"
-                    bitrate_k;
-                  "-map 0:s? -c:s copy";
-                  "-map_chapters 0";
+                  "ffmpeg";
+                  "-i";
+                  filepath;
+                  "-loglevel";
+                  "fatal";
+                  "-map";
+                  "0:v:0";
+                  "-c:v";
+                  "copy";
+                  "-map";
+                  "0:a:0";
+                  "-c:a:0";
+                  "copy";
+                  "-map";
+                  "0:a:0";
+                  "-c:a:1";
+                  "eac3";
+                  "-b:a:1";
+                  bitrate_k ^ "k";
+                  "-ac:a:1";
+                  "6";
+                  "-map";
+                  "0:s?";
+                  "-c:s";
+                  "copy";
+                  "-map_chapters";
+                  "0";
                   "-metadata:s:a:0";
-                  Printf.sprintf "title=EAC3 7.1 @ %s kbps" bitrate_k;
+                  Printf.sprintf "title=EAC3 7.1 @ %skbps" bitrate_k;
                   "-metadata:s:a:1";
-                  Printf.sprintf "title=EAC3 5.1 @ %s kbps" bitrate_k;
+                  Printf.sprintf "title=EAC3 5.1 @ %skbps" bitrate_k;
                   "-metadata:s:a:1";
                   Printf.sprintf "language=%s" lang;
                   temp_file;
@@ -95,14 +135,25 @@ let run filepath : (unit, string) result =
               in
 
               match run_command ffmpeg_argv with
-              | Ok () ->
-                  Printf.printf
-                    "\nFFmpeg completed successfully.\nOutput file: %s\n%!"
-                    temp_file;
-                  Ok ()
               | Error msg ->
-                  Printf.eprintf "FFmpeg failed: %s\n%!" msg;
-                  Error msg)))
+                  Printf.eprintf "ffmpeg failed: %s\n%!" msg;
+                  Error msg
+              | Ok () -> (
+                  Printf.printf "Running mkvmerge...\n%!";
+                  let mkvmerge_argv =
+                    [| "mkvmerge"; "-o"; final_file; temp_file |]
+                  in
+
+                  match run_command mkvmerge_argv with
+                  | Error msg ->
+                      Printf.eprintf "mkvmerge failed: %s\n%!" msg;
+                      Error msg
+                  | Ok () ->
+                      Printf.printf "File created: %s\n%!" final_file;
+                      ignore
+                        (Sys.command
+                           (Printf.sprintf "rm -f %s" (Filename.quote temp_file)));
+                      Ok ()))))
 
 let file_arg =
   let doc = "Path to the media file" in
