@@ -440,6 +440,7 @@ let run_process_capture_output prog args =
 
 let probe_media_file filepath =
   let ffprobe_path = Binaries.ffprobe_path () in
+  (* ffprobe -v quiet -print_format json -show_streams -show_format inputFile *)
   let args =
     [
       "-v";
