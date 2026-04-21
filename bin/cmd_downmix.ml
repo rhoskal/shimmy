@@ -83,8 +83,7 @@ let run filepath : (unit, string) result =
     | Some b -> Ok b
   in
 
-  Printf.printf
-    "[INFO] Found EAC-3 7.1 stream: index=%d, bitrate=%d, lang=%s\n%!"
+  Printf.printf "[-] Found EAC-3 7.1 stream: index=%d, bitrate=%d, lang=%s\n%!"
     stream.index bitrate lang;
 
   (* 4. Prepare filenames *)
