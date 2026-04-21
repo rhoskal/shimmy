@@ -60,8 +60,8 @@ let format_audio_title (s : Ffprobe.audio_stream) : string =
   in
 
   match s.channel_layout with
-  | Some layout -> Printf.sprintf "%s %.1f" with_atmos layout
   | None -> with_atmos
+  | Some layout -> Printf.sprintf "%s %.1f" with_atmos layout
 
 let run filepath : (unit, string) result =
   let open Result_syntax in
@@ -74,7 +74,7 @@ let run filepath : (unit, string) result =
   let* stream =
     match
       List.find_opt
-        (fun (s : Ffprobe.audio_stream) -> s.codec_name = "eac3")
+        (fun (s : Ffprobe.audio_stream) -> s.codec_name = "truehd")
         audio_streams
     with
     | None -> Error "Could not find a TRUEHD audio stream"
