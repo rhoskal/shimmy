@@ -76,33 +76,14 @@ let run filepath : (unit, string) result =
               let bitrate_k = Printf.sprintf "%d" (bitrate / 1000) in
               let ffmpeg_argv =
                 [|
-                  "ffmpeg";
-                  "-i";
-                  filepath;
-                  "-loglevel";
-                  "fatal";
-                  "-map";
-                  "0:v:0";
-                  "-c:v";
-                  "copy";
-                  "-map";
-                  Printf.sprintf "0:a:%d" (stream.index - 1);
-                  "-c:a:0";
-                  "copy";
-                  "-map";
-                  Printf.sprintf "0:a:%d" (stream.index - 1);
-                  "-c:a:1";
-                  "eac3";
-                  "-b:a:1";
-                  Printf.sprintf "%sk" bitrate_k;
-                  "-ac:a:1";
-                  "6";
-                  "-map";
-                  "0:s?";
-                  "-c:s";
-                  "copy";
-                  "-map_chapters";
-                  "0";
+                  Printf.sprintf "ffmpeg -i %s" filepath;
+                  "-loglevel fatal";
+                  "-map 0:v:0 -c:v copy";
+                  "-map 0:a:0 -c:a:0 copy";
+                  Printf.sprintf "-map 0:a:0 -c:a:1 eac3 -b:a:1 %sk -ac:a:1 6"
+                    bitrate_k;
+                  "-map 0:s? -c:s copy";
+                  "-map_chapters 0";
                   "-metadata:s:a:0";
                   Printf.sprintf "title=EAC3 7.1 @ %s kbps" bitrate_k;
                   "-metadata:s:a:1";
