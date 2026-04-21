@@ -111,12 +111,12 @@ let print_format_info (fmt : Ffprobe.format_info) : unit =
   (match fmt.size with
   | None -> ()
   | Some bytes ->
-      if bytes > 1_073_741_824 then
+      if bytes > 1_000_000_000 then
         Printf.printf "  • Size       : %.2f GB\n"
-          (float_of_int bytes /. 1_073_741_824.0)
+          (float_of_int bytes /. 1_000_000_000.0)
       else
         Printf.printf "  • Size       : %.2f MB\n"
-          (float_of_int bytes /. 1_048_576.0));
+          (float_of_int bytes /. 1_000_000.0));
 
   (match fmt.bitrate with
   | None -> ()
