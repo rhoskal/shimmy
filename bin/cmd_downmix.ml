@@ -133,9 +133,9 @@ let run filepath : (unit, string) result =
       "-map_chapters";
       "0";
       "-metadata:s:a:0";
-      Printf.sprintf "title=EAC3 7.1 @ %skbps" bitrate_k;
+      Printf.sprintf "title=EAC3 7.1 @ %s kbps" bitrate_k;
       "-metadata:s:a:1";
-      Printf.sprintf "title=EAC3 5.1 @ %skbps" bitrate_k;
+      Printf.sprintf "title=EAC3 5.1 @ %s kbps" bitrate_k;
       "-metadata:s:a:1";
       Printf.sprintf "language=%s" lang;
       temp_file;
