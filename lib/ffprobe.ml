@@ -99,7 +99,9 @@ module Json = struct
 
     let of_json json =
       let bool_field name =
-        match json |> member name |> to_int with 1 -> true | _ -> false
+        match json |> member name |> to_int_option with
+        | Some 1 -> true
+        | _ -> false
       in
       {
         disp_default_present = bool_field "default";
