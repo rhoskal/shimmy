@@ -32,6 +32,10 @@ let run_command (argv : string array) : (unit, string) result =
            (Unix.error_message err))
   | e -> Error (Printexc.to_string e)
 
+let replace_dts_with_eac3 filename =
+  let re = Re.compile (Re.str "DTS") in
+  Re.replace_string ~by:"EAC3" re filename
+
 let mk_final_filename (path : string) : string =
   let dir = Filename.dirname path in
   let base = Filename.basename path in
@@ -50,7 +54,7 @@ let mk_final_filename (path : string) : string =
       String.sub name 0 last_dash
     with Not_found -> name
   in
-  Filename.concat dir (clean_name ^ "-rhoskal" ^ ext)
+  Filename.concat dir (clean_name ^ "-rhoskal" ^ ext) |> replace_dts_with_eac3
 
 let is_dts (s : Ffprobe.audio_stream) = s.codec_name = "dts"
 
