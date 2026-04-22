@@ -55,15 +55,15 @@ let mk_final_filename (path : string) : string =
 let format_audio_title (s : Ffprobe.audio_stream) : string =
   let base = "DTS-X" in
 
-  match s.channel_layout with
+  match s.as_channel_layout with
   | None -> base
   | Some layout -> Printf.sprintf "%s %.1f" base layout
 
 let is_dts_x (s : Ffprobe.audio_stream) =
   let re = Re.compile (Re.str "DTS:X") in
-  match s.profile with
+  match s.as_profile with
   | None -> false
-  | Some p -> s.codec_name = "dts" && Re.execp re p
+  | Some p -> s.as_codec_name = "dts" && Re.execp re p
 
 let run filepath : (unit, string) result =
   let open Result_syntax in
@@ -81,12 +81,13 @@ let run filepath : (unit, string) result =
 
   (* 3. Validate metadata *)
   let* lang =
-    match stream.language with
+    match stream.as_language with
     | None -> Error "Target stream has no language tag"
     | Some l -> Ok l
   in
 
-  Printf.printf "[-] Found DTS stream: index=%d, lang=%s\n%!" stream.index lang;
+  Printf.printf "[-] Found DTS stream: index=%d, lang=%s\n%!" stream.as_index
+    lang;
 
   (* 4. Prepare filenames *)
   let dir = Filename.dirname filepath in

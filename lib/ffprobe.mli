@@ -1,109 +1,121 @@
 type disposition_info = {
-  default_present : bool;
-  forced_present : bool;
-  hearing_impaired_present : bool;
+  disp_default_present : bool;
+  disp_forced_present : bool;
+  disp_hearing_impaired_present : bool;
 }
-(** ? **)
+(** Stream disposition flags.
+
+    - [disp_default_present]: True if the stream is marked as the default
+      selection (e.g. the player should pick it automatically).
+    - [disp_forced_present]: True if the stream is marked as forced (e.g.
+      subtitles that should always be shown regardless of user preference).
+    - [disp_hearing_impaired_present]: True if the stream is intended for
+      hearing-impaired audiences (SDH/HI). *)
+
+type tags_info = {
+  tag_bit_rate : int option;
+  tag_language : string option;
+  tag_title : string option;
+}
+(** Common metadata tags extracted from a stream or format.
+
+    - [tag_bit_rate]: Bitrate as reported in tags (may duplicate or differ from
+      the main bitrate field).
+    - [tag_language]: ISO 639 language code (e.g. "eng", "jpn").
+    - [tag_title]: Human-readable title or description for the stream. *)
 
 type dovi_info = {
-  bl_compatibility_id : int option;
-  bl_present : bool;
-  el_present : bool;
-  level : int option;
-  profile : int;
-  rpu_present : bool;
-  version_major : int option;
-  version_minor : int option;
+  dovi_bl_compatibility_id : int option;
+  dovi_bl_present : bool;
+  dovi_el_present : bool;
+  dovi_level : int option;
+  dovi_profile : int;
+  dovi_rpu_present : bool;
+  dovi_version_major : int option;
+  dovi_version_minor : int option;
 }
 (** Dolby Vision configuration record metadata.
 
-    Extracted from the "DOVI configuration record" entry inside a video stream's
-    [side_data_list] in ffprobe output.
-
-    - [profile]: Dolby Vision profile (e.g. 8 = Profile 8.1).
-    - [level]: Dolby Vision level (e.g. 6).
-    - [version_major] / [version_minor]: DOVI version (usually 1.0).
-    - [bl_present], [el_present], [rpu_present]: Presence flags for Base Layer,
-      Enhancement Layer, and Reference Processing Unit.
-    - [bl_compatibility_id]: Backward compatibility signal (1 = HDR10, 2 = SDR,
-      4 = HLG, etc.). *)
+    - [dovi_profile]: Dolby Vision profile (e.g. 8 = Profile 8.1).
+    - [dovi_level]: Dolby Vision level (e.g. 6).
+    - [dovi_version_major] / [dovi_version_minor]: DOVI version (usually 1.0).
+    - [dovi_bl_present], [dovi_el_present], [dovi_rpu_present]: Presence flags
+      for Base Layer, Enhancement Layer, and Reference Processing Unit.
+    - [dovi_bl_compatibility_id]: Backward compatibility signal (1 = HDR10, 2 =
+      SDR, 4 = HLG, etc.). *)
 
 type video_stream = {
-  index : int;
-  avg_frame_rate : string option;
-  bit_depth : int option;
-  bitrate : int option;
-  codec_name : string;
-  disposition : disposition_info;
-  dovi : dovi_info option;
-  height : int;
-  language : string option;
-  pix_fmt : string option;
-  profile : string option;
-  width : int;
+  vs_index : int;
+  vs_avg_frame_rate : string option;
+  vs_bit_depth : int option;
+  vs_bitrate : int option;
+  vs_codec_name : string;
+  vs_disposition : disposition_info;
+  vs_dovi : dovi_info option;
+  vs_height : int;
+  vs_language : string option;
+  vs_pix_fmt : string option;
+  vs_profile : string option;
+  vs_width : int;
 }
 (** Video stream metadata extracted from ffprobe.
 
-    Fields correspond closely to entries under "streams" in ffprobe JSON.
-
-    - [index]: Zero-based stream index within the container.
-    - [avg_frame_rate]: Raw ffprobe string (e.g. "30000/1001"). Not normalized.
-    - [bit_depth]: Bits per pixel component, if available (e.g. 8, 10).
-    - [bitrate]: Bitrate in bits per second.
-    - [codec_name]: Codec identifier (e.g. "h264", "hevc").
-    - [disposition]: ???
-    - [dovi]: Dolby Vision metadata if present (see {!dovi_info}).
-    - [height], [width]: Frame dimensions in pixels.
-    - [language]: ISO language code from tags (e.g. "eng").
-    - [pix_fmt]: Pixel format (e.g. "yuv420p").
-    - [profile]: Codec profile (e.g. "High"). *)
+    - [vs_index]: Zero-based stream index within the container.
+    - [vs_avg_frame_rate]: Raw ffprobe string (e.g. "30000/1001"). Not
+      normalized.
+    - [vs_bit_depth]: Bits per pixel component, if available (e.g. 8, 10).
+    - [vs_bitrate]: Bitrate in bits per second.
+    - [vs_codec_name]: Codec identifier (e.g. "h264", "hevc").
+    - [vs_disposition]: Disposition flags (see {!disposition_info}).
+    - [vs_dovi]: Dolby Vision metadata if present (see {!dovi_info}).
+    - [vs_height], [vs_width]: Frame dimensions in pixels.
+    - [vs_language]: ISO language code from tags (e.g. "eng").
+    - [vs_pix_fmt]: Pixel format (e.g. "yuv420p").
+    - [vs_profile]: Codec profile (e.g. "High"). *)
 
 type audio_stream = {
-  index : int;
-  atmos_present : bool option;
-  bitrate : int option;
-  channel_layout : float option;
-  channels : int option;
-  codec_name : string;
-  disposition : disposition_info;
-  language : string option;
-  profile : string option;
-  sample_rate : int option;
-  title : string option;
+  as_index : int;
+  as_atmos_present : bool option;
+  as_bitrate : int option;
+  as_channel_layout : float option;
+  as_channels : int option;
+  as_codec_name : string;
+  as_disposition : disposition_info;
+  as_language : string option;
+  as_profile : string option;
+  as_sample_rate : int option;
+  as_title : string option;
 }
 (** Audio stream metadata extracted from ffprobe.
 
-    - [index]: Zero-based stream index.
-    - [atmos_present]: True if the audio stream is Dolby Atmos.
-    - [bitrate]: Bitrate in bits per second.
-    - [channel_layout]: Output channel layout (e.g. 5.1).
-    - [channels]: Number of audio channels (e.g. 2, 6).
-    - [codec_name]: Codec identifier (e.g. "aac", "opus").
-    - [disposition]: ???
-    - [language]: ISO language code from tags.
-    - [profile]: Codec profile (e.g. "LC").
-    - [sample_rate]: Sampling rate in Hz (e.g. 44100).
-    - [title]: Stream title from metadata tags. *)
+    - [as_index]: Zero-based stream index.
+    - [as_atmos_present]: True if the audio stream is Dolby Atmos.
+    - [as_bitrate]: Bitrate in bits per second.
+    - [as_channel_layout]: Output channel layout (e.g. 5.1).
+    - [as_channels]: Number of audio channels (e.g. 2, 6).
+    - [as_codec_name]: Codec identifier (e.g. "aac", "opus").
+    - [as_disposition]: Disposition flags (see {!disposition_info}).
+    - [as_language]: ISO language code from tags.
+    - [as_profile]: Codec profile (e.g. "LC").
+    - [as_sample_rate]: Sampling rate in Hz (e.g. 44100).
+    - [as_title]: Stream title from metadata tags. *)
 
 type subtitle_stream = {
-  index : int;
-  codec_name : string;
-  disposition : disposition_info;
-  hearing_impaired_present : bool;
-  language : string option;
-  title : string option;
+  ss_index : int;
+  ss_codec_name : string;
+  ss_disposition : disposition_info;
+  ss_language : string option;
+  ss_title : string option;
 }
 (** Subtitle stream metadata extracted from ffprobe.
 
-    - [index]: Zero-based stream index.
-    - [codec_name]: Subtitle codec (e.g. "subrip", "ass").
-    - [disposition]: ???
-    - [hearing_impaired_present]: True if marked as SDH/HI (hearing impaired),
-      inferred from disposition flags when available.
-    - [language]: ISO language code from tags.
-    - [title]: Stream title or description. *)
+    - [ss_index]: Zero-based stream index.
+    - [ss_codec_name]: Subtitle codec (e.g. "subrip", "ass").
+    - [ss_disposition]: Disposition flags (see {!disposition_info}).
+    - [ss_language]: ISO language code from tags.
+    - [ss_title]: Stream title or description. *)
 
-type data_stream = { index : int; codec_name : string }
+type data_stream = { ds_index : int; ds_codec_name : string }
 (** Generic data stream (e.g. attachments, timed metadata).
 
     These correspond to ffprobe streams with unhandled or non-media "codec_type"
@@ -120,27 +132,27 @@ type stream =
           that stream kind. *)
 
 type format_info = {
-  bitrate : int option;
-  duration : float option;
-  filename : string;
-  format_name : string option;
-  size : int option;
+  fi_bitrate : int option;
+  fi_duration : float option;
+  fi_filename : string;
+  fi_format_name : string option;
+  fi_size : int option;
 }
 (** Container-level metadata extracted from ffprobe "format".
 
-    - [bitrate]: Bitrate in bits per second.
-    - [duration]: Stream duration in seconds.
-    - [filename]: Input filename as reported by ffprobe.
-    - [format_name]: Container format (e.g. "matroska", "mp4"), possibly a
+    - [fi_bitrate]: Bitrate in bits per second.
+    - [fi_duration]: Stream duration in seconds.
+    - [fi_filename]: Input filename as reported by ffprobe.
+    - [fi_format_name]: Container format (e.g. "matroska", "mp4"), possibly a
       comma-separated list.
-    - [size]: File size in bytes. *)
+    - [fi_size]: File size in bytes. *)
 
-type probe_result = { streams : stream list; format_info : format_info }
+type probe_result = { pr_streams : stream list; pr_format_info : format_info }
 (** Result of probing a media file with ffprobe.
 
     Contains:
-    - [streams]: All streams found in the file.
-    - [format_info]: Container-level metadata. *)
+    - [pr_streams]: All streams found in the file.
+    - [pr_format_info]: Container-level metadata. *)
 
 val probe_media_file : string -> (probe_result, string) Result.t
 (** Run ffprobe on the given file and parse a subset of its JSON output.
