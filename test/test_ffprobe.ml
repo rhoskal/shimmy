@@ -123,7 +123,7 @@ let test_parse_audio_stream () =
   check (option int) "bitrate" (Some 30661884) audio.bitrate;
   check (option (float 1e-6)) "channel_layout" (Some 7.1) audio.channel_layout;
   check (option int) "channels" (Some 8) audio.channels;
-  check (option bool) "is_atmos" (Some false) audio.is_atmos;
+  check (option bool) "atmos_present" (Some false) audio.atmos_present;
   check (option string) "language" (Some "eng") audio.language;
   check (option string) "profile" (Some "DTS-HD MA + DTS:X IMAX") audio.profile;
   check (option int) "sample_rate" (Some 48000) audio.sample_rate;
@@ -135,7 +135,7 @@ let test_parse_subtitle_stream () =
 
   check int "index" 3 sub.index;
   check string "codec_name" "subrip" sub.codec_name;
-  check bool "hearing_impaired" true sub.hearing_impaired;
+  check bool "hearing_impaired_present" true sub.hearing_impaired_present;
   check (option string) "language" (Some "eng") sub.language;
   check (option string) "title" (Some "English SDH") sub.title
 

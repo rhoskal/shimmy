@@ -99,7 +99,7 @@ let print_subtitle_stream (stream : Ffprobe.subtitle_stream) : unit =
   | None -> ()
   | Some t -> Printf.printf "  • Title      : %s\n" t);
 
-  Printf.printf "  • SDH        : %b\n" stream.hearing_impaired
+  Printf.printf "  • SDH        : %b\n" stream.hearing_impaired_present
 
 let print_format_info (fmt : Ffprobe.format_info) : unit =
   Printf.printf "  • Filename   : %s\n" (Filename.basename fmt.filename);

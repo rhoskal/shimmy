@@ -35,7 +35,7 @@ type audio_stream = {
   channel_layout : float option;
   channels : int option;
   codec_name : string;
-  is_atmos : bool option;
+  atmos_present : bool option;
   language : string option;
   profile : string option;
   sample_rate : int option;
@@ -45,7 +45,7 @@ type audio_stream = {
 type subtitle_stream = {
   index : int;
   codec_name : string;
-  hearing_impaired : bool;
+  hearing_impaired_present : bool;
   language : string option;
   title : string option;
 }
@@ -246,7 +246,7 @@ module Json = struct
 
     let profile t = t |> member "profile" |> to_string_option
 
-    let is_atmos t =
+    let atmos_present t =
       Option.map
         (fun p ->
           let re = Re.compile (Re.str "Atmos") in
@@ -274,7 +274,7 @@ module Json = struct
 
     let codec_name t = t |> member "codec_name" |> to_string
 
-    let hearing_impaired t =
+    let hearing_impaired_present t =
       match
         t |> member "disposition" |> member "hearing_impaired" |> to_int
       with
@@ -369,7 +369,7 @@ let parse_audio_stream audio_json : audio_stream =
     channels = Json.Audio.channels audio;
     codec_name = Json.Audio.codec_name audio;
     index = Json.Audio.index audio;
-    is_atmos = Json.Audio.is_atmos audio;
+    atmos_present = Json.Audio.atmos_present audio;
     language = Json.Audio.language audio;
     profile = Json.Audio.profile audio;
     sample_rate = Json.Audio.sample_rate audio;
@@ -381,7 +381,7 @@ let parse_subtitle_stream subs_json : subtitle_stream =
   {
     index = Json.Subtitle.index subs;
     codec_name = Json.Subtitle.codec_name subs;
-    hearing_impaired = Json.Subtitle.hearing_impaired subs;
+    hearing_impaired_present = Json.Subtitle.hearing_impaired_present subs;
     language = Json.Subtitle.language subs;
     title = Json.Subtitle.title subs;
   }

@@ -8,6 +8,18 @@ type dovi_info = {
   version_major : int option;
   version_minor : int option;
 }
+(** Dolby Vision configuration record metadata.
+
+    Extracted from the "DOVI configuration record" entry inside a video stream's
+    [side_data_list] in ffprobe output.
+
+    - [profile]: Dolby Vision profile (e.g. 8 = Profile 8.1).
+    - [level]: Dolby Vision level (e.g. 6).
+    - [version_major] / [version_minor]: DOVI version (usually 1.0).
+    - [bl_present], [el_present], [rpu_present]: Presence flags for Base Layer,
+      Enhancement Layer, and Reference Processing Unit.
+    - [bl_compatibility_id]: Backward compatibility signal (1 = HDR10, 2 = SDR,
+      4 = HLG, etc.). *)
 
 type video_stream = {
   index : int;
@@ -43,7 +55,7 @@ type audio_stream = {
   channel_layout : float option;
   channels : int option;
   codec_name : string;
-  is_atmos : bool option;
+  atmos_present : bool option;
   language : string option;
   profile : string option;
   sample_rate : int option;
@@ -56,6 +68,7 @@ type audio_stream = {
     - [channel_layout]: Output channel layout (e.g. 5.1).
     - [channels]: Number of audio channels (e.g. 2, 6).
     - [codec_name]: Codec identifier (e.g. "aac", "opus").
+    - [atmos_present]: True if the audio stream is Dolby Atmos.
     - [language]: ISO language code from tags.
     - [profile]: Codec profile (e.g. "LC").
     - [sample_rate]: Sampling rate in Hz (e.g. 44100).
@@ -64,7 +77,7 @@ type audio_stream = {
 type subtitle_stream = {
   index : int;
   codec_name : string;
-  hearing_impaired : bool;
+  hearing_impaired_present : bool;
   language : string option;
   title : string option;
 }
@@ -72,8 +85,8 @@ type subtitle_stream = {
 
     - [index]: Zero-based stream index.
     - [codec_name]: Subtitle codec (e.g. "subrip", "ass").
-    - [hearing_impaired]: True if marked as SDH/HI (hearing impaired), inferred
-      from disposition flags when available.
+    - [hearing_impaired_present]: True if marked as SDH/HI (hearing impaired),
+      inferred from disposition flags when available.
     - [language]: ISO language code from tags.
     - [title]: Stream title or description. *)
 

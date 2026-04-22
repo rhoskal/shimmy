@@ -56,7 +56,7 @@ let format_audio_title (s : Ffprobe.audio_stream) : string =
   let base = "TrueHD" in
 
   let with_atmos =
-    match s.is_atmos with Some true -> base ^ " Atmos" | _ -> base
+    match s.atmos_present with Some true -> base ^ " Atmos" | _ -> base
   in
 
   match s.channel_layout with
