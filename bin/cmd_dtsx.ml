@@ -60,8 +60,10 @@ let format_audio_title (s : Ffprobe.audio_stream) : string =
   | Some layout -> Printf.sprintf "%s %.1f" base layout
 
 let is_dts_x (s : Ffprobe.audio_stream) =
-  s.codec_name = "dts"
-  && match s.profile with Some "DTS-HD MA + DTS:X" -> true | _ -> false
+  let re = Re.compile (Re.str "DTS:X") in
+  match s.profile with
+  | None -> false
+  | Some p -> s.codec_name = "dts" && Re.execp re p
 
 let run filepath : (unit, string) result =
   let open Result_syntax in
