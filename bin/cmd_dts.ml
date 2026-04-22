@@ -56,7 +56,7 @@ let mk_final_filename (path : string) : string =
   in
   Filename.concat dir (clean_name ^ "-rhoskal" ^ ext) |> replace_dts_with_eac3
 
-let is_dts (s : Ffprobe.audio_stream) = s.codec_name = "dts"
+let is_dts (s : Ffprobe.audio_stream) = s.as_codec_name = "dts"
 
 let run filepath : (unit, string) result =
   let open Result_syntax in
@@ -74,12 +74,13 @@ let run filepath : (unit, string) result =
 
   (* 3. Validate metadata *)
   let* lang =
-    match stream.language with
+    match stream.as_language with
     | None -> Error "Target stream has no language tag"
     | Some l -> Ok l
   in
 
-  Printf.printf "[-] Found DTS stream: index=%d, lang=%s\n%!" stream.index lang;
+  Printf.printf "[-] Found DTS stream: index=%d, lang=%s\n%!" stream.as_index
+    lang;
 
   (* 4. Prepare filenames *)
   let dir = Filename.dirname filepath in
@@ -95,7 +96,7 @@ let run filepath : (unit, string) result =
 
   (* 5. Build and run FFmpeg *)
   let bitrate_k =
-    match stream.bitrate with
+    match stream.as_bitrate with
     | None -> string_of_int 0
     | Some b when b < 1536000 -> string_of_int (b / 1000)
     | _ -> string_of_int 1536

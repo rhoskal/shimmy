@@ -56,10 +56,10 @@ let format_audio_title (s : Ffprobe.audio_stream) : string =
   let base = "TrueHD" in
 
   let with_atmos =
-    match s.atmos_present with Some true -> base ^ " Atmos" | _ -> base
+    match s.as_atmos_present with Some true -> base ^ " Atmos" | _ -> base
   in
 
-  match s.channel_layout with
+  match s.as_channel_layout with
   | None -> with_atmos
   | Some layout -> Printf.sprintf "%s %.1f" with_atmos layout
 
@@ -74,7 +74,7 @@ let run filepath : (unit, string) result =
   let* stream =
     match
       List.find_opt
-        (fun (s : Ffprobe.audio_stream) -> s.codec_name = "truehd")
+        (fun (s : Ffprobe.audio_stream) -> s.as_codec_name = "truehd")
         audio_streams
     with
     | None -> Error "Could not find a TRUEHD audio stream"
@@ -83,12 +83,12 @@ let run filepath : (unit, string) result =
 
   (* 3. Validate metadata *)
   let* lang =
-    match stream.language with
+    match stream.as_language with
     | None -> Error "Target stream has no language tag"
     | Some l -> Ok l
   in
 
-  Printf.printf "[-] Found TRUEHD stream: index=%d, lang=%s\n%!" stream.index
+  Printf.printf "[-] Found TRUEHD stream: index=%d, lang=%s\n%!" stream.as_index
     lang;
 
   (* 4. Prepare filenames *)

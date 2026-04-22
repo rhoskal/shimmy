@@ -64,7 +64,7 @@ let run filepath : (unit, string) result =
     match
       List.find_opt
         (fun (s : Ffprobe.audio_stream) ->
-          s.codec_name = "eac3" && s.channels = Some 8)
+          s.as_codec_name = "eac3" && s.as_channels = Some 8)
         audio_streams
     with
     | None -> Error "Could not find an EAC-3 7.1 (8-channel) audio stream"
@@ -73,18 +73,18 @@ let run filepath : (unit, string) result =
 
   (* 3. Validate metadata *)
   let* lang =
-    match stream.language with
+    match stream.as_language with
     | None -> Error "Target stream has no language tag"
     | Some l -> Ok l
   in
   let* bitrate =
-    match stream.bitrate with
+    match stream.as_bitrate with
     | None -> Error "Target stream has no bitrate"
     | Some b -> Ok b
   in
 
   Printf.printf "[-] Found EAC-3 7.1 stream: index=%d, bitrate=%d, lang=%s\n%!"
-    stream.index bitrate lang;
+    stream.as_index bitrate lang;
 
   (* 4. Prepare filenames *)
   let dir = Filename.dirname filepath in

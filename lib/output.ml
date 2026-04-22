@@ -17,9 +17,9 @@ let get_fps (frame_rate : string) : string option =
   | _ -> None
 
 let get_bit_depth (stream : Ffprobe.video_stream) : int =
-  match stream.bit_depth with
+  match stream.vs_bit_depth with
   | None -> (
-      match stream.pix_fmt with
+      match stream.vs_pix_fmt with
       | Some "yuv420p" -> 8
       | Some "yuv420p10le" -> 10
       | Some "yuv422p12le" -> 12
@@ -28,15 +28,15 @@ let get_bit_depth (stream : Ffprobe.video_stream) : int =
   | Some bd -> bd
 
 let print_video_stream (stream : Ffprobe.video_stream) : unit =
-  Printf.printf "Stream #%d (%s)\n" stream.index
-    (match stream.language with None -> "und" | Some lang -> lang);
+  Printf.printf "Stream #%d (%s)\n" stream.vs_index
+    (match stream.vs_language with None -> "und" | Some lang -> lang);
 
   Printf.printf "  • Codec      : %s\n"
-    (String.uppercase_ascii stream.codec_name);
+    (String.uppercase_ascii stream.vs_codec_name);
 
-  Printf.printf "  • Resolution : %dx%d\n" stream.width stream.height;
+  Printf.printf "  • Resolution : %dx%d\n" stream.vs_width stream.vs_height;
 
-  (match stream.bitrate with
+  (match stream.vs_bitrate with
   | None -> ()
   | Some b ->
       Printf.printf "  • Bitrate    : %.0f kbps\n"
@@ -44,71 +44,72 @@ let print_video_stream (stream : Ffprobe.video_stream) : unit =
 
   Printf.printf "  • BitDepth   : %d\n" (get_bit_depth stream);
 
-  (match stream.profile with
+  (match stream.vs_profile with
   | None -> ()
   | Some p -> Printf.printf "  • Profile    : %s\n" p);
 
-  match stream.avg_frame_rate with
+  match stream.vs_avg_frame_rate with
   | None -> ()
   | Some frame_rate ->
       Printf.printf "  • FrameRate  : %s\n"
         (match get_fps frame_rate with None -> "UNKNOWN" | Some fps -> fps)
 
 let print_audio_stream (stream : Ffprobe.audio_stream) : unit =
-  Printf.printf "Stream #%d (%s)\n" stream.index
-    (match stream.language with None -> "und" | Some lang -> lang);
+  Printf.printf "Stream #%d (%s)\n" stream.as_index
+    (match stream.as_language with None -> "und" | Some lang -> lang);
 
   Printf.printf "  • Codec      : %s\n"
-    (String.uppercase_ascii stream.codec_name);
+    (String.uppercase_ascii stream.as_codec_name);
 
-  (match stream.profile with
+  (match stream.as_profile with
   | None -> ()
   | Some p -> Printf.printf "  • Profile    : %s\n" p);
 
-  (match stream.bitrate with
+  (match stream.as_bitrate with
   | None -> ()
   | Some b ->
       Printf.printf "  • Bitrate    : %.0f kbps\n"
         (Float.ceil (float_of_int b /. 1000.0)));
 
-  (match stream.channels with
+  (match stream.as_channels with
   | None -> ()
   | Some c -> Printf.printf "  • Channels   : %d\n" c);
 
-  (match stream.sample_rate with
+  (match stream.as_sample_rate with
   | None -> ()
   | Some r -> Printf.printf "  • SampleRate : %d Hz\n" r);
 
-  match stream.title with
+  match stream.as_title with
   | None -> ()
   | Some t -> Printf.printf "  • Title      : %s\n" t
 
 let print_subtitle_stream (stream : Ffprobe.subtitle_stream) : unit =
-  Printf.printf "Stream #%d (%s)\n" stream.index
-    (match stream.language with None -> "und" | Some lang -> lang);
+  Printf.printf "Stream #%d (%s)\n" stream.ss_index
+    (match stream.ss_language with None -> "und" | Some lang -> lang);
 
   Printf.printf "  • Codec      : %s\n"
-    (match stream.codec_name with
+    (match stream.ss_codec_name with
     | "ass" -> "ASS"
     | "hdmv_pgs_subtitle" -> "PGS"
     | "subrip" -> "SRT"
     | "vobsub" -> "VOBSUB"
     | _ -> "UNKNOWN");
 
-  (match stream.title with
+  (match stream.ss_title with
   | None -> ()
   | Some t -> Printf.printf "  • Title      : %s\n" t);
 
-  Printf.printf "  • SDH        : %b\n" stream.hearing_impaired_present
+  Printf.printf "  • SDH        : %b\n"
+    stream.ss_disposition.disp_hearing_impaired_present
 
 let print_format_info (fmt : Ffprobe.format_info) : unit =
-  Printf.printf "  • Filename   : %s\n" (Filename.basename fmt.filename);
+  Printf.printf "  • Filename   : %s\n" (Filename.basename fmt.fi_filename);
 
-  (match fmt.duration with
+  (match fmt.fi_duration with
   | None -> ()
   | Some d -> Printf.printf "  • Duration   : %s\n" (format_duration d));
 
-  (match fmt.size with
+  (match fmt.fi_size with
   | None -> ()
   | Some bytes ->
       if bytes > 1_000_000_000 then
@@ -118,21 +119,21 @@ let print_format_info (fmt : Ffprobe.format_info) : unit =
         Printf.printf "  • Size       : %.2f MB\n"
           (float_of_int bytes /. 1_000_000.0));
 
-  (match fmt.bitrate with
+  (match fmt.fi_bitrate with
   | None -> ()
   | Some b ->
       Printf.printf "  • Bitrate    : %.0f kbps\n"
         (Float.ceil (float_of_int b /. 1000.0)));
 
   Printf.printf "  • Container  : %s\n"
-    (match fmt.format_name with
+    (match fmt.fi_format_name with
     | Some "matroska,webm" -> "MKV"
     | Some "mp4" -> "MP4"
     | _ -> "UNKNOWN")
 
 let print_probe_result (result : Ffprobe.probe_result) : unit =
   print_section_header "FORMAT";
-  print_format_info result.format_info;
+  print_format_info result.pr_format_info;
 
   let videos = Ffprobe.video_streams result in
   if List.length videos > 0 then begin
