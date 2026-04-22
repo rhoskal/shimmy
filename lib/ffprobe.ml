@@ -251,8 +251,7 @@ module Json = struct
       | `List side_list ->
           side_list
           |> List.find_opt (fun sd ->
-              let sd' = SideData.of_json sd in
-              SideData.dovi_present sd')
+              SideData.of_json sd |> SideData.dovi_present)
           |> Option.map (fun sd ->
               let sd' = SideData.of_json sd in
               {
