@@ -479,3 +479,12 @@ let probe_media_file filepath =
       with
       | Yojson.Json_error msg -> Error ("JSON parse failed: " ^ msg)
       | e -> Error ("Unexpected error: " ^ Printexc.to_string e))
+
+module For_testing = struct
+  let parse_video_stream = parse_video_stream
+  let parse_audio_stream = parse_audio_stream
+  let parse_subtitle_stream = parse_subtitle_stream
+  let parse_data_stream = parse_data_stream
+  let parse_format_info = parse_format_info
+  let parse_stream_by_type = parse_stream_by_type
+end

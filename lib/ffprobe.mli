@@ -134,3 +134,15 @@ val audio_streams : probe_result -> audio_stream list
 
 val subtitle_streams : probe_result -> subtitle_stream list
 (** Extract all subtitle streams from a probe result. *)
+
+(**/**) (* This stops ocamldoc from including the rest in public docs *)
+
+module For_testing : sig
+  val parse_video_stream : Yojson.Basic.t -> video_stream
+  val parse_audio_stream : Yojson.Basic.t -> audio_stream
+  val parse_subtitle_stream : Yojson.Basic.t -> subtitle_stream
+  val parse_data_stream : Yojson.Basic.t -> data_stream
+  val parse_format_info : Yojson.Basic.t -> format_info
+end
+
+(**/**)
