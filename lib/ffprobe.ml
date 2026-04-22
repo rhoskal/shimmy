@@ -4,6 +4,12 @@ open Yojson.Basic.Util
 (* Types                 *)
 (* ===================== *)
 
+type disposition_info = {
+  default_present : bool;
+  forced_present : bool;
+  hearing_impaired_present : bool;
+}
+
 type dovi_info = {
   bl_compatibility_id : int option;
   bl_present : bool;
@@ -21,6 +27,7 @@ type video_stream = {
   bit_depth : int option;
   bitrate : int option;
   codec_name : string;
+  disposition : disposition_info;
   dovi : dovi_info option;
   height : int;
   language : string option;
@@ -31,11 +38,12 @@ type video_stream = {
 
 type audio_stream = {
   index : int;
+  atmos_present : bool option;
   bitrate : int option;
   channel_layout : float option;
   channels : int option;
   codec_name : string;
-  atmos_present : bool option;
+  disposition : disposition_info;
   language : string option;
   profile : string option;
   sample_rate : int option;
@@ -45,6 +53,7 @@ type audio_stream = {
 type subtitle_stream = {
   index : int;
   codec_name : string;
+  disposition : disposition_info;
   hearing_impaired_present : bool;
   language : string option;
   title : string option;
@@ -143,6 +152,25 @@ module Json = struct
       | _ -> false
   end
 
+  module Disposition = struct
+    type t = disposition_info
+
+    let of_json json =
+      let bool_field name =
+        match json |> member name |> to_int with 1 -> true | _ -> false
+      in
+      {
+        default_present = bool_field "default";
+        forced_present = bool_field "forced";
+        hearing_impaired_present = bool_field "hearing_impaired";
+      }
+
+    (* Convenience accessors *)
+    let default t = t.default_present
+    let forced t = t.forced_present
+    let hearing_impaired t = t.hearing_impaired_present
+  end
+
   module Video = struct
     type t = Yojson.Basic.t
 
@@ -172,6 +200,11 @@ module Json = struct
       | Some _ as result -> result
 
     let codec_name t = t |> member "codec_name" |> to_string
+
+    let disposition t : disposition_info =
+      match t |> member "disposition" with
+      | `Assoc _ as obj -> Disposition.of_json obj
+      | _ -> Disposition.of_json (`Assoc [])
 
     let dovi t =
       match t |> member "side_data_list" with
@@ -239,6 +272,12 @@ module Json = struct
 
     let channels t = t |> member "channels" |> to_int_option
     let codec_name t = t |> member "codec_name" |> to_string
+
+    let disposition t : disposition_info =
+      match t |> member "disposition" with
+      | `Assoc _ as obj -> Disposition.of_json obj
+      | _ -> Disposition.of_json (`Assoc [])
+
     let index t = t |> member "index" |> to_int
 
     let language t =
@@ -273,6 +312,11 @@ module Json = struct
       | _ -> None
 
     let codec_name t = t |> member "codec_name" |> to_string
+
+    let disposition t : disposition_info =
+      match t |> member "disposition" with
+      | `Assoc _ as obj -> Disposition.of_json obj
+      | _ -> Disposition.of_json (`Assoc [])
 
     let hearing_impaired_present t =
       match
@@ -348,13 +392,14 @@ let subtitle_streams result =
 let parse_video_stream video_json : video_stream =
   let video = Json.Video.of_json video_json in
   {
+    index = Json.Video.index video;
     avg_frame_rate = Json.Video.avg_frame_rate video;
     bit_depth = Json.Video.bit_depth video;
     bitrate = Json.Video.bit_rate video;
     codec_name = Json.Video.codec_name video;
+    disposition = Json.Video.disposition video;
     dovi = Json.Video.dovi video;
     height = Json.Video.height video;
-    index = Json.Video.index video;
     language = Json.Video.language video;
     pix_fmt = Json.Video.pix_fmt video;
     profile = Json.Video.profile video;
@@ -364,12 +409,13 @@ let parse_video_stream video_json : video_stream =
 let parse_audio_stream audio_json : audio_stream =
   let audio = Json.Audio.of_json audio_json in
   {
+    index = Json.Audio.index audio;
+    atmos_present = Json.Audio.atmos_present audio;
     bitrate = Json.Audio.bit_rate audio;
     channel_layout = Json.Audio.channel_layout audio;
     channels = Json.Audio.channels audio;
     codec_name = Json.Audio.codec_name audio;
-    index = Json.Audio.index audio;
-    atmos_present = Json.Audio.atmos_present audio;
+    disposition = Json.Video.disposition audio;
     language = Json.Audio.language audio;
     profile = Json.Audio.profile audio;
     sample_rate = Json.Audio.sample_rate audio;
@@ -381,6 +427,7 @@ let parse_subtitle_stream subs_json : subtitle_stream =
   {
     index = Json.Subtitle.index subs;
     codec_name = Json.Subtitle.codec_name subs;
+    disposition = Json.Video.disposition subs;
     hearing_impaired_present = Json.Subtitle.hearing_impaired_present subs;
     language = Json.Subtitle.language subs;
     title = Json.Subtitle.title subs;

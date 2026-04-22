@@ -1,3 +1,10 @@
+type disposition_info = {
+  default_present : bool;
+  forced_present : bool;
+  hearing_impaired_present : bool;
+}
+(** ? **)
+
 type dovi_info = {
   bl_compatibility_id : int option;
   bl_present : bool;
@@ -27,6 +34,7 @@ type video_stream = {
   bit_depth : int option;
   bitrate : int option;
   codec_name : string;
+  disposition : disposition_info;
   dovi : dovi_info option;
   height : int;
   language : string option;
@@ -43,6 +51,7 @@ type video_stream = {
     - [bit_depth]: Bits per pixel component, if available (e.g. 8, 10).
     - [bitrate]: Bitrate in bits per second.
     - [codec_name]: Codec identifier (e.g. "h264", "hevc").
+    - [disposition]: ???
     - [dovi]: Dolby Vision metadata if present (see {!dovi_info}).
     - [height], [width]: Frame dimensions in pixels.
     - [language]: ISO language code from tags (e.g. "eng").
@@ -51,11 +60,12 @@ type video_stream = {
 
 type audio_stream = {
   index : int;
+  atmos_present : bool option;
   bitrate : int option;
   channel_layout : float option;
   channels : int option;
   codec_name : string;
-  atmos_present : bool option;
+  disposition : disposition_info;
   language : string option;
   profile : string option;
   sample_rate : int option;
@@ -64,11 +74,12 @@ type audio_stream = {
 (** Audio stream metadata extracted from ffprobe.
 
     - [index]: Zero-based stream index.
+    - [atmos_present]: True if the audio stream is Dolby Atmos.
     - [bitrate]: Bitrate in bits per second.
     - [channel_layout]: Output channel layout (e.g. 5.1).
     - [channels]: Number of audio channels (e.g. 2, 6).
     - [codec_name]: Codec identifier (e.g. "aac", "opus").
-    - [atmos_present]: True if the audio stream is Dolby Atmos.
+    - [disposition]: ???
     - [language]: ISO language code from tags.
     - [profile]: Codec profile (e.g. "LC").
     - [sample_rate]: Sampling rate in Hz (e.g. 44100).
@@ -77,6 +88,7 @@ type audio_stream = {
 type subtitle_stream = {
   index : int;
   codec_name : string;
+  disposition : disposition_info;
   hearing_impaired_present : bool;
   language : string option;
   title : string option;
@@ -85,6 +97,7 @@ type subtitle_stream = {
 
     - [index]: Zero-based stream index.
     - [codec_name]: Subtitle codec (e.g. "subrip", "ass").
+    - [disposition]: ???
     - [hearing_impaired_present]: True if marked as SDH/HI (hearing impaired),
       inferred from disposition flags when available.
     - [language]: ISO language code from tags.
