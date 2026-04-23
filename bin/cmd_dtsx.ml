@@ -52,18 +52,18 @@ let mk_final_filename (path : string) : string =
   in
   Filename.concat dir (clean_name ^ "-rhoskal" ^ ext)
 
-let format_audio_title (s : Ffprobe.audio_stream) : string =
+let format_audio_title (s : Ffprobe.Audio.t) : string =
   let base = "DTS-X" in
 
-  match s.as_channel_layout with
+  match s.channel_layout with
   | None -> base
   | Some layout -> Printf.sprintf "%s %.1f" base layout
 
-let is_dts_x (s : Ffprobe.audio_stream) =
+let is_dts_x (stream : Ffprobe.Audio.t) =
   let re = Re.compile (Re.str "DTS:X") in
-  match s.as_profile with
+  match stream.profile with
   | None -> false
-  | Some p -> s.as_codec_name = "dts" && Re.execp re p
+  | Some p -> stream.codec_name = "dts" && Re.execp re p
 
 let run filepath : (unit, string) result =
   let open Result_syntax in
@@ -81,13 +81,12 @@ let run filepath : (unit, string) result =
 
   (* 3. Validate metadata *)
   let* lang =
-    match stream.as_language with
+    match stream.language with
     | None -> Error "Target stream has no language tag"
     | Some l -> Ok l
   in
 
-  Printf.printf "[-] Found DTS stream: index=%d, lang=%s\n%!" stream.as_index
-    lang;
+  Printf.printf "[-] Found DTS stream: index=%d, lang=%s\n%!" stream.index lang;
 
   (* 4. Prepare filenames *)
   let dir = Filename.dirname filepath in

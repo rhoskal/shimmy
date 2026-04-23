@@ -52,14 +52,17 @@ let mk_final_filename (path : string) : string =
   in
   Filename.concat dir (clean_name ^ "-rhoskal" ^ ext)
 
-let format_audio_title (s : Ffprobe.audio_stream) : string =
+let is_atmos (stream : Ffprobe.Audio.t) : bool =
+  let re = Re.compile (Re.str "Atmos") in
+  match stream.profile with
+  | Some profile -> Re.execp re profile
+  | None -> false
+
+let format_audio_title (stream : Ffprobe.Audio.t) : string =
   let base = "TrueHD" in
+  let with_atmos = if is_atmos stream then base ^ " Atmos" else base in
 
-  let with_atmos =
-    match s.as_atmos_present with Some true -> base ^ " Atmos" | _ -> base
-  in
-
-  match s.as_channel_layout with
+  match stream.channel_layout with
   | None -> with_atmos
   | Some layout -> Printf.sprintf "%s %.1f" with_atmos layout
 
@@ -74,7 +77,7 @@ let run filepath : (unit, string) result =
   let* stream =
     match
       List.find_opt
-        (fun (s : Ffprobe.audio_stream) -> s.as_codec_name = "truehd")
+        (fun (s : Ffprobe.Audio.t) -> s.codec_name = "truehd")
         audio_streams
     with
     | None -> Error "Could not find a TRUEHD audio stream"
@@ -83,12 +86,12 @@ let run filepath : (unit, string) result =
 
   (* 3. Validate metadata *)
   let* lang =
-    match stream.as_language with
+    match stream.language with
     | None -> Error "Target stream has no language tag"
     | Some l -> Ok l
   in
 
-  Printf.printf "[-] Found TRUEHD stream: index=%d, lang=%s\n%!" stream.as_index
+  Printf.printf "[-] Found TRUEHD stream: index=%d, lang=%s\n%!" stream.index
     lang;
 
   (* 4. Prepare filenames *)

@@ -1,5 +1,5 @@
 open Alcotest
-open Shimmy.Ffprobe.For_testing
+open Shimmy.Ffprobe.Testing
 
 let format_info_json =
   {|{
@@ -91,66 +91,64 @@ let subtitle_stream_json =
   }|}
 
 let test_parse_format_info () =
-  let fi_json = Yojson.Basic.from_string format_info_json in
-  let fmt = parse_format_info fi_json in
+  let json = Yojson.Basic.from_string format_info_json in
+  let info = parse_format_info json in
 
-  check (option int) "bitrate" (Some 38420868) fmt.fi_bitrate;
-  check (option (float 1e-6)) "duration" (Some 5941.952000) fmt.fi_duration;
-  check string "filename" "movie.mkv" fmt.fi_filename;
-  check (option string) "format_name" (Some "matroska,webm") fmt.fi_format_name;
-  check (option int) "size" (Some 28536869623) fmt.fi_size
+  check (option int) "bit_rate" (Some 38420868) info.bitrate;
+  check (option (float 1e-6)) "duration" (Some 5941.952000) info.duration;
+  check string "filename" "movie.mkv" info.filename;
+  check (option string) "format_name" (Some "matroska,webm") info.format_name;
+  check (option int) "size" (Some 28536869623) info.size
 
 let test_parse_video_stream () =
-  let vs_json = Yojson.Basic.from_string video_stream_json in
-  let v = parse_video_stream vs_json in
+  let json = Yojson.Basic.from_string video_stream_json in
+  let stream = parse_video_stream json in
 
-  check int "index" 0 v.vs_index;
-  check (option string) "avg_frame_rate" (Some "24000/1001") v.vs_avg_frame_rate;
-  check (option int) "bit_depth" None v.vs_bit_depth;
-  check (option int) "bitrate" (Some 30661884) v.vs_bitrate;
-  check string "codec_name" "hevc" v.vs_codec_name;
-  (match v.vs_dovi with
+  check int "index" 0 stream.index;
+  check (option string) "avg_frame_rate" (Some "24000/1001") stream.frame_rate;
+  check (option int) "bit_depth" None stream.bit_depth;
+  check (option int) "bit_rate" (Some 30661884) stream.bitrate;
+  check string "codec_name" "hevc" stream.codec_name;
+  (match stream.dovi with
   | None -> fail "expected dovi"
   | Some dovi ->
-      check (option int) "bl_compatibility_id" (Some 1)
-        dovi.dovi_bl_compatibility_id;
-      check bool "bl_present" true dovi.dovi_bl_present;
-      check bool "el_present" false dovi.dovi_el_present;
-      check (option int) "level" (Some 6) dovi.dovi_level;
-      check int "profile" 8 dovi.dovi_profile;
-      check bool "rpu_present" true dovi.dovi_rpu_present;
-      check (option int) "version_major" (Some 1) dovi.dovi_version_major;
-      check (option int) "version_minor" (Some 0) dovi.dovi_version_minor);
-  check int "height" 1608 v.vs_height;
-  check (option string) "language" (Some "eng") v.vs_language;
-  check (option string) "pix_fmt" (Some "yuv420p10le") v.vs_pix_fmt;
-  check (option string) "profile" (Some "Main 10") v.vs_profile;
-  check int "width" 3840 v.vs_width
+      check (option int) "bl_compatibility_id" (Some 1) dovi.bl_compatibility_id;
+      check bool "bl_present" true dovi.bl_present;
+      check bool "el_present" false dovi.el_present;
+      check (option int) "level" (Some 6) dovi.level;
+      check int "profile" 8 dovi.profile;
+      check bool "rpu_present" true dovi.rpu_present;
+      check (option int) "version_major" (Some 1) dovi.version_major;
+      check (option int) "version_minor" (Some 0) dovi.version_minor);
+  check int "height" 1608 stream.height;
+  check (option string) "language" (Some "eng") stream.language;
+  check (option string) "pix_fmt" (Some "yuv420p10le") stream.pix_fmt;
+  check (option string) "profile" (Some "Main 10") stream.profile;
+  check int "width" 3840 stream.width
 
 let test_parse_audio_stream () =
-  let as_json = Yojson.Basic.from_string audio_stream_json in
-  let a = parse_audio_stream as_json in
+  let json = Yojson.Basic.from_string audio_stream_json in
+  let stream = parse_audio_stream json in
 
-  check int "index" 1 a.as_index;
-  check (option int) "bitrate" (Some 30661884) a.as_bitrate;
-  check (option (float 1e-6)) "channel_layout" (Some 7.1) a.as_channel_layout;
-  check (option int) "channels" (Some 8) a.as_channels;
-  check (option bool) "atmos_present" (Some false) a.as_atmos_present;
-  check (option string) "language" (Some "eng") a.as_language;
-  check (option string) "profile" (Some "DTS-HD MA + DTS:X IMAX") a.as_profile;
-  check (option int) "sample_rate" (Some 48000) a.as_sample_rate;
-  check (option string) "title" (Some "DTS-X 7.1") a.as_title
+  check int "index" 1 stream.index;
+  check (option int) "bit_rate" (Some 30661884) stream.bitrate;
+  check (option (float 1e-6)) "channel_layout" (Some 7.1) stream.channel_layout;
+  check (option int) "channels" (Some 8) stream.channels;
+  check (option string) "language" (Some "eng") stream.language;
+  check (option string) "profile" (Some "DTS-HD MA + DTS:X IMAX") stream.profile;
+  check (option int) "sample_rate" (Some 48000) stream.sample_rate;
+  check (option string) "title" (Some "DTS-X 7.1") stream.title
 
 let test_parse_subtitle_stream () =
-  let ss_json = Yojson.Basic.from_string subtitle_stream_json in
-  let s = parse_subtitle_stream ss_json in
+  let json = Yojson.Basic.from_string subtitle_stream_json in
+  let stream = parse_subtitle_stream json in
 
-  check int "index" 3 s.ss_index;
-  check string "codec_name" "subrip" s.ss_codec_name;
+  check int "index" 3 stream.index;
+  check string "codec_name" "subrip" stream.codec_name;
   check bool "hearing_impaired_present" true
-    s.ss_disposition.disp_hearing_impaired_present;
-  check (option string) "language" (Some "eng") s.ss_language;
-  check (option string) "title" (Some "English SDH") s.ss_title
+    stream.disposition.hearing_impaired_present;
+  check (option string) "language" (Some "eng") stream.language;
+  check (option string) "title" (Some "English SDH") stream.title
 
 let () =
   run "ffprobe"
