@@ -6,8 +6,8 @@ let run filepath : (unit, string) result =
   | Error msg ->
       Printf.eprintf "Error: %s\n%!" msg;
       Error msg
-  | Ok result ->
-      Output.print_probe_result result;
+  | Ok probe ->
+      Output.print_probe_result probe;
       Ok ()
 
 let file_arg =

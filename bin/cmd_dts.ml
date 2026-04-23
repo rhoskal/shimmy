@@ -156,7 +156,7 @@ let file_arg =
   Arg.(required & pos 0 (some non_dir_file) None & info [] ~docv:"PATH" ~doc)
 
 let cmd =
-  let doc = "Convert DTS audio stream to be EAC3" in
+  let doc = "Convert DTS audio stream to EAC3" in
   let info = Cmd.info "dts" ~doc in
 
   Cmd.make info Term.(const run $ file_arg)

@@ -52,10 +52,10 @@ let mk_final_filename (path : string) : string =
   in
   Filename.concat dir (clean_name ^ "-rhoskal" ^ ext)
 
-let format_audio_title (s : Ffprobe.Audio.t) : string =
+let format_audio_title (stream : Ffprobe.Audio.t) : string =
   let base = "DTS-HD MA" in
 
-  match s.channel_layout with
+  match stream.channel_layout with
   | None -> base
   | Some Mono -> Printf.sprintf "%s 1.0" base
   | Some Stereo -> Printf.sprintf "%s 2.0" base
@@ -65,9 +65,9 @@ let format_audio_title (s : Ffprobe.Audio.t) : string =
   | Some Surround_9_1 -> Printf.sprintf "%s 9.1" base
   | Some (Unknown s) -> Printf.sprintf "%s %s" base s
 
-let is_dts_hd_ma (s : Ffprobe.Audio.t) =
-  s.codec_name = "dts"
-  && match s.profile with Some "DTS-HD MA" -> true | _ -> false
+let is_dts_hd_ma (stream : Ffprobe.Audio.t) =
+  stream.codec_name = "dts"
+  && match stream.profile with Some "DTS-HD MA" -> true | _ -> false
 
 let run filepath : (unit, string) result =
   let open Result_syntax in
