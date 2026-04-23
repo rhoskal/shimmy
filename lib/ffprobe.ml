@@ -51,10 +51,19 @@ module Video = struct
 end
 
 module Audio = struct
+  type channel_layout =
+    | Mono
+    | Stereo
+    | Surround_3_0
+    | Surround_5_1
+    | Surround_7_1
+    | Surround_9_1
+    | Unknown of string
+
   type t = {
     index : int;
     bitrate : int option;
-    channel_layout : float option;
+    channel_layout : channel_layout option;
     channels : int option;
     codec_name : string;
     disposition : Disposition.t;
@@ -230,16 +239,17 @@ module AudioParser = struct
     | None -> ( match tags t with None -> None | Some tags -> tags.bitrate)
     | Some _ as result -> result
 
-  let channel_layout t =
+  let channel_layout t : Audio.channel_layout option =
     match t |> member "channel_layout" |> to_string_option with
     | None -> None
     | Some s ->
-        if String.starts_with ~prefix:"9.1" s then Some 9.1
-        else if String.starts_with ~prefix:"7.1" s then Some 7.1
-        else if String.starts_with ~prefix:"5.1" s then Some 5.1
-        else if String.starts_with ~prefix:"3.0" s then Some 3.0
-        else if String.starts_with ~prefix:"2.0" s then Some 2.0
-        else None
+        if String.starts_with ~prefix:"9.1" s then Some Audio.Surround_9_1
+        else if String.starts_with ~prefix:"7.1" s then Some Audio.Surround_7_1
+        else if String.starts_with ~prefix:"5.1" s then Some Audio.Surround_5_1
+        else if String.starts_with ~prefix:"3.0" s then Some Audio.Surround_3_0
+        else if String.starts_with ~prefix:"2.0" s then Some Audio.Stereo
+        else if String.starts_with ~prefix:"1.0" s then Some Audio.Mono
+        else Some (Audio.Unknown s)
 
   let channels t = t |> member "channels" |> to_int_option
   let codec_name t = t |> member "codec_name" |> to_string

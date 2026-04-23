@@ -57,7 +57,13 @@ let format_audio_title (s : Ffprobe.Audio.t) : string =
 
   match s.channel_layout with
   | None -> base
-  | Some layout -> Printf.sprintf "%s %.1f" base layout
+  | Some Mono -> Printf.sprintf "%s 1.0" base
+  | Some Stereo -> Printf.sprintf "%s 2.0" base
+  | Some Surround_3_0 -> Printf.sprintf "%s 3.0" base
+  | Some Surround_5_1 -> Printf.sprintf "%s 5.1" base
+  | Some Surround_7_1 -> Printf.sprintf "%s 7.1" base
+  | Some Surround_9_1 -> Printf.sprintf "%s 9.1" base
+  | Some (Unknown s) -> Printf.sprintf "%s %s" base s
 
 let is_dts_x (stream : Ffprobe.Audio.t) =
   let re = Re.compile (Re.str "DTS:X") in
