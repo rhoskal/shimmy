@@ -153,11 +153,3 @@ let print_probe_result (probe : Ffprobe.Probe.t) : unit =
     List.iter print_subtitle_stream subs
   end;
   Printf.printf "\n"
-
-let print_stream_summary (result : Ffprobe.Probe.t) : unit =
-  Printf.printf "Video: %d stream(s)\n"
-    (List.length (Ffprobe.video_streams result));
-  Printf.printf "Audio: %d stream(s)\n"
-    (List.length (Ffprobe.audio_streams result));
-  Printf.printf "Subtitles: %d stream(s)\n"
-    (List.length (Ffprobe.subtitle_streams result))
