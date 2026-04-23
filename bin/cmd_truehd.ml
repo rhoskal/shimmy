@@ -55,8 +55,8 @@ let mk_final_filename (path : string) : string =
 let is_atmos (stream : Ffprobe.Audio.t) : bool =
   let re = Re.compile (Re.str "Atmos") in
   match stream.profile with
-  | Some profile -> Re.execp re profile
   | None -> false
+  | Some profile -> Re.execp re profile
 
 let format_audio_title (stream : Ffprobe.Audio.t) : string =
   let base = "TrueHD" in
@@ -64,7 +64,13 @@ let format_audio_title (stream : Ffprobe.Audio.t) : string =
 
   match stream.channel_layout with
   | None -> with_atmos
-  | Some layout -> Printf.sprintf "%s %.1f" with_atmos layout
+  | Some Mono -> Printf.sprintf "%s 1.0" with_atmos
+  | Some Stereo -> Printf.sprintf "%s 2.0" with_atmos
+  | Some Surround_3_0 -> Printf.sprintf "%s 3.0" with_atmos
+  | Some Surround_5_1 -> Printf.sprintf "%s 5.1" with_atmos
+  | Some Surround_7_1 -> Printf.sprintf "%s 7.1" with_atmos
+  | Some Surround_9_1 -> Printf.sprintf "%s 9.1" with_atmos
+  | Some (Unknown s) -> Printf.sprintf "%s %s" with_atmos s
 
 let run filepath : (unit, string) result =
   let open Result_syntax in

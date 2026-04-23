@@ -1,5 +1,5 @@
 open Alcotest
-open Shimmy.Ffprobe.Testing
+open Shimmy
 
 let format_info_json =
   {|{
@@ -90,9 +90,25 @@ let subtitle_stream_json =
     }
   }|}
 
+let pp_channel_layout fmt = function
+  | Ffprobe.Audio.Mono -> Format.fprintf fmt "Mono"
+  | Ffprobe.Audio.Stereo -> Format.fprintf fmt "Stereo"
+  | Ffprobe.Audio.Surround_3_0 -> Format.fprintf fmt "3.0"
+  | Ffprobe.Audio.Surround_5_1 -> Format.fprintf fmt "5.1"
+  | Ffprobe.Audio.Surround_7_1 -> Format.fprintf fmt "7.1"
+  | Ffprobe.Audio.Surround_9_1 -> Format.fprintf fmt "9.1"
+  | Ffprobe.Audio.Unknown s -> Format.fprintf fmt "Unknown(%s)" s
+
+let eq_channel_layout a b = a = b
+
+let testable_channel_layout =
+  Alcotest.testable pp_channel_layout eq_channel_layout
+
+let check_channel_layout = Alcotest.option testable_channel_layout
+
 let test_parse_format_info () =
   let json = Yojson.Basic.from_string format_info_json in
-  let info = parse_format_info json in
+  let info = Ffprobe.Testing.parse_format_info json in
 
   check (option int) "bit_rate" (Some 38420868) info.bitrate;
   check (option (float 1e-6)) "duration" (Some 5941.952000) info.duration;
@@ -102,7 +118,7 @@ let test_parse_format_info () =
 
 let test_parse_video_stream () =
   let json = Yojson.Basic.from_string video_stream_json in
-  let stream = parse_video_stream json in
+  let stream = Ffprobe.Testing.parse_video_stream json in
 
   check int "index" 0 stream.index;
   check (option string) "avg_frame_rate" (Some "24000/1001") stream.frame_rate;
@@ -128,11 +144,12 @@ let test_parse_video_stream () =
 
 let test_parse_audio_stream () =
   let json = Yojson.Basic.from_string audio_stream_json in
-  let stream = parse_audio_stream json in
+  let stream = Ffprobe.Testing.parse_audio_stream json in
 
   check int "index" 1 stream.index;
   check (option int) "bit_rate" (Some 30661884) stream.bitrate;
-  check (option (float 1e-6)) "channel_layout" (Some 7.1) stream.channel_layout;
+  check check_channel_layout "channel_layout" (Some Ffprobe.Audio.Surround_7_1)
+    stream.channel_layout;
   check (option int) "channels" (Some 8) stream.channels;
   check (option string) "language" (Some "eng") stream.language;
   check (option string) "profile" (Some "DTS-HD MA + DTS:X IMAX") stream.profile;
@@ -141,7 +158,7 @@ let test_parse_audio_stream () =
 
 let test_parse_subtitle_stream () =
   let json = Yojson.Basic.from_string subtitle_stream_json in
-  let stream = parse_subtitle_stream json in
+  let stream = Ffprobe.Testing.parse_subtitle_stream json in
 
   check int "index" 3 stream.index;
   check string "codec_name" "subrip" stream.codec_name;

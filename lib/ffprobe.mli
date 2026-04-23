@@ -97,10 +97,19 @@ end
     - [sample_rate]: Sampling rate in Hz (e.g. 44100).
     - [title]: Stream title from metadata tags. *)
 module Audio : sig
+  type channel_layout =
+    | Mono
+    | Stereo
+    | Surround_3_0
+    | Surround_5_1
+    | Surround_7_1
+    | Surround_9_1
+    | Unknown of string
+
   type t = private {
     index : int;
     bitrate : int option;
-    channel_layout : float option;
+    channel_layout : channel_layout option;
     channels : int option;
     codec_name : string;
     disposition : Disposition.t;
