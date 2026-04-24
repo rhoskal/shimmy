@@ -24,8 +24,12 @@ clean: ## Clean build artifacts
 	dune clean
 
 .PHONY: install
-install:
+install: ## Install project deps
 	opam install . --deps-only --with-test --yes
+
+.PHONY: release
+release: ## Generate release => _build/install/default/bin/shimmy
+	dune build @install --profile=release
 
 .PHONY: run
 run: ## Run the executable (use ARGS='...' to pass arguments)
