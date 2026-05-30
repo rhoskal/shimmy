@@ -142,6 +142,8 @@ let run filepath : (unit, string) result =
       Printf.sprintf "title=EAC3 5.1 @ %s kbps" bitrate_k;
       "-metadata:s:a:1";
       Printf.sprintf "language=%s" lang;
+      "-disposition:a:1";
+      "0";
       temp_file;
     |]
   in
