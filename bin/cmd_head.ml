@@ -1,37 +1,6 @@
 open Cmdliner
 open Shimmy
 
-module Result_syntax = struct
-  let ( let* ) = Result.bind
-end
-
-(** Run a command with proper signal forwarding so Ctrl-C works cleanly *)
-let run_command (argv : string array) : (unit, string) result =
-  try
-    let pid =
-      Unix.create_process argv.(0) argv Unix.stdin Unix.stdout Unix.stderr
-    in
-    match Unix.waitpid [] pid with
-    | _, Unix.WEXITED 0 -> Ok ()
-    | _, Unix.WEXITED n ->
-        Error (Printf.sprintf "Command failed with exit code %d" n)
-    | _, Unix.WSIGNALED s ->
-        let sig_name =
-          match s with
-          | 2 -> "SIGINT"
-          | 9 -> "SIGKILL"
-          | 15 -> "SIGTERM"
-          | n -> Printf.sprintf "signal %d" n
-        in
-        Error (Printf.sprintf "Command killed by %s" sig_name)
-    | _, Unix.WSTOPPED _ -> Error "Command stopped"
-  with
-  | Unix.Unix_error (err, fn, arg) ->
-      Error
-        (Printf.sprintf "Unix error in %s(%s): %s" fn arg
-           (Unix.error_message err))
-  | e -> Error (Printexc.to_string e)
-
 let mk_final_filename (path : string) : string =
   let dir = Filename.dirname path in
   let base = Filename.basename path in
@@ -85,23 +54,19 @@ let format_audio_title (stream : Ffprobe.Audio.t) : string =
 
 let run filepath : (unit, string) result =
   let open Result_syntax in
-  (* 1. Probe *)
+  (* Probe *)
   let* probe = Ffprobe.probe_media_file filepath in
 
   let audio_streams = Ffprobe.audio_streams probe in
 
-  (* 2. Find target stream *)
+  (* Find target stream *)
   let* stream =
     match audio_streams with
     | [] -> Error "Failed to get first audio stream"
     | x :: _ -> Ok x
   in
 
-  (* let* x =
-    Option.to_result ~none:"Target stream has no language tag" stream.language
-  in *)
-
-  (* 3. Validate metadata *)
+  (* Validate metadata *)
   let* lang =
     match stream.language with
     | None -> Error "Target stream has no language tag"
@@ -111,7 +76,7 @@ let run filepath : (unit, string) result =
   Printf.printf "[-] Found %s stream: index=%d, lang=%s\n%!" stream.codec_name
     stream.index lang;
 
-  (* 4. Prepare filenames *)
+  (* Prepare filenames *)
   let dir = Filename.dirname filepath in
   let base = Filename.basename filepath in
   let name, ext =
@@ -123,7 +88,7 @@ let run filepath : (unit, string) result =
   let temp_file = Filename.concat dir (Printf.sprintf "%s_temp%s" name ext) in
   let final_file = mk_final_filename filepath in
 
-  (* 5. Build and run FFmpeg *)
+  (* Build and run FFmpeg *)
   let bitrate_k =
     match stream.bitrate with
     | None -> string_of_int 0
@@ -179,20 +144,21 @@ let run filepath : (unit, string) result =
   in
 
   Printf.printf "[+] Running ffmpeg...\n%!";
-  let* () = run_command ffmpeg_argv in
+  let* () = Process.run_command ffmpeg_argv in
 
-  (* 6. Run mkvmerge *)
+  (* Run mkvmerge *)
   let mkvmerge_argv =
     [| "mkvmerge"; "--quiet"; "--output"; final_file; temp_file |]
   in
 
   Printf.printf "[+] Running mkvmerge...\n%!";
-  let* () = run_command mkvmerge_argv in
+  let* () = Process.run_command mkvmerge_argv in
 
   Printf.printf "[✓] Success! Final file: %s\n%!" final_file;
 
   (* Cleanup *)
   ignore (Sys.command (Printf.sprintf "rm -f %s" (Filename.quote temp_file)));
+
   Ok ()
 
 let file_arg =

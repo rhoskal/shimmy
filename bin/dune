@@ -10,5 +10,7 @@
   cmd_head
   cmd_probe
   cmd_truehd
-  main)
+  main
+  process
+  result_syntax)
  (libraries cmdliner shimmy))
