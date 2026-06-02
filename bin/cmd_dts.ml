@@ -25,30 +25,28 @@ let mk_final_filename (path : string) : string =
   in
   Filename.concat dir (clean_name ^ "-rhoskal" ^ ext) |> replace_dts_with_eac3
 
-let is_dts (stream : Ffprobe.Audio.t) = stream.codec_name = "dts"
-
 let run filepath : (unit, string) result =
   let open Result_syntax in
   (* 1. Probe *)
   let* probe = Ffprobe.probe_media_file filepath in
 
-  let audio_streams = Ffprobe.audio_streams probe in
-
   (* 2. Find target stream *)
   let* stream =
-    match List.find_opt is_dts audio_streams with
-    | None -> Error "Could not find a DTS audio stream"
-    | Some s -> Ok s
+    Option.to_result ~none:"Could not find a DTS audio stream"
+      (List.find_opt Shared.is_dts (Ffprobe.audio_streams probe))
   in
 
   (* 3. Validate metadata *)
   let* lang =
-    match stream.language with
-    | None -> Error "Target stream has no language tag"
-    | Some l -> Ok l
+    Option.to_result ~none:"Target stream has no language tag" stream.language
   in
 
-  Printf.printf "[-] Found DTS stream: index=%d, lang=%s\n%!" stream.index lang;
+  let* bitrate =
+    Option.to_result ~none:"Target stream has no bitrate" stream.bitrate
+  in
+
+  Printf.printf "[-] Found DTS stream @ index=%d with lang=%s\n%!" stream.index
+    lang;
 
   (* 4. Prepare filenames *)
   let dir = Filename.dirname filepath in
@@ -63,12 +61,7 @@ let run filepath : (unit, string) result =
   let final_file = mk_final_filename filepath in
 
   (* 5. Build and run FFmpeg *)
-  let bitrate_k =
-    match stream.bitrate with
-    | None -> string_of_int 0
-    | Some b when b < 1536000 -> string_of_int (b / 1000)
-    | _ -> string_of_int 1536
-  in
+  let bitrate_k = Shared.bitrate_k stream in
 
   let ffmpeg_argv =
     [|
@@ -99,6 +92,8 @@ let run filepath : (unit, string) result =
       Printf.sprintf "title=EAC3 5.1 @ %s kbps" bitrate_k;
       "-metadata:s:a:0";
       Printf.sprintf "language=%s" lang;
+      "-disposition:a:0";
+      "1";
       temp_file;
     |]
   in

@@ -23,39 +23,35 @@ let mk_final_filename (path : string) : string =
 
 let run filepath : (unit, string) result =
   let open Result_syntax in
-  (* 1. Probe *)
+  (* Probe *)
   let* probe = Ffprobe.probe_media_file filepath in
 
-  let audio_streams = Ffprobe.audio_streams probe in
-
-  (* 2. Find target stream *)
+  (* Find target stream *)
   let* stream =
     match
       List.find_opt
         (fun (s : Ffprobe.Audio.t) ->
           s.codec_name = "eac3" && s.channels = Some 8)
-        audio_streams
+        (Ffprobe.audio_streams probe)
     with
     | None -> Error "Could not find an EAC-3 7.1 (8-channel) audio stream"
     | Some s -> Ok s
   in
 
-  (* 3. Validate metadata *)
+  (* Validate metadata *)
   let* lang =
-    match stream.language with
-    | None -> Error "Target stream has no language tag"
-    | Some l -> Ok l
-  in
-  let* bitrate =
-    match stream.bitrate with
-    | None -> Error "Target stream has no bitrate"
-    | Some b -> Ok b
+    Option.to_result ~none:"Target stream has no language tag" stream.language
   in
 
-  Printf.printf "[-] Found EAC-3 7.1 stream: index=%d, bitrate=%d, lang=%s\n%!"
+  let* bitrate =
+    Option.to_result ~none:"Target stream has no bitrate" stream.bitrate
+  in
+
+  Printf.printf
+    "[-] Found EAC-3 7.1 stream @ index=%d with bitrate=%d, lang=%s\n%!"
     stream.index bitrate lang;
 
-  (* 4. Prepare filenames *)
+  (* Prepare filenames *)
   let dir = Filename.dirname filepath in
   let base = Filename.basename filepath in
   let name, ext =
@@ -67,8 +63,8 @@ let run filepath : (unit, string) result =
   let temp_file = Filename.concat dir (Printf.sprintf "%s_temp%s" name ext) in
   let final_file = mk_final_filename filepath in
 
-  (* 5. Build and run FFmpeg *)
-  let bitrate_k = string_of_int (bitrate / 1000) in
+  (* Build and run FFmpeg *)
+  let bitrate_k = Shared.bitrate_k stream in
 
   let ffmpeg_argv =
     [|
@@ -105,6 +101,8 @@ let run filepath : (unit, string) result =
       Printf.sprintf "title=EAC3 5.1 @ %s kbps" bitrate_k;
       "-metadata:s:a:1";
       Printf.sprintf "language=%s" lang;
+      "-disposition:a:0";
+      "1";
       "-disposition:a:1";
       "0";
       temp_file;
@@ -114,7 +112,7 @@ let run filepath : (unit, string) result =
   Printf.printf "[+] Running ffmpeg...\n%!";
   let* () = Process.run_command ffmpeg_argv in
 
-  (* 6. Run mkvmerge *)
+  (* Run mkvmerge *)
   let mkvmerge_argv =
     [| "mkvmerge"; "--quiet"; "--output"; final_file; temp_file |]
   in

@@ -21,45 +21,28 @@ let mk_final_filename (path : string) : string =
   in
   Filename.concat dir (clean_name ^ "-rhoskal" ^ ext)
 
-let format_audio_title (stream : Ffprobe.Audio.t) : string =
-  let base = "DTS-HD MA" in
-
-  match stream.channel_layout with
-  | None -> base
-  | Some Mono -> Printf.sprintf "%s 1.0" base
-  | Some Stereo -> Printf.sprintf "%s 2.0" base
-  | Some Surround_3_0 -> Printf.sprintf "%s 3.0" base
-  | Some Surround_5_1 -> Printf.sprintf "%s 5.1" base
-  | Some Surround_7_1 -> Printf.sprintf "%s 7.1" base
-  | Some Surround_9_1 -> Printf.sprintf "%s 9.1" base
-  | Some (Unknown s) -> Printf.sprintf "%s %s" base s
-
-let is_dts_hd_ma (stream : Ffprobe.Audio.t) =
-  stream.codec_name = "dts"
-  && match stream.profile with Some "DTS-HD MA" -> true | _ -> false
-
 let run filepath : (unit, string) result =
   let open Result_syntax in
   (* 1. Probe *)
   let* probe = Ffprobe.probe_media_file filepath in
 
-  let audio_streams = Ffprobe.audio_streams probe in
-
   (* 2. Find target stream *)
   let* stream =
-    match List.find_opt is_dts_hd_ma audio_streams with
-    | None -> Error "Could not find a DTS audio stream"
-    | Some s -> Ok s
+    Option.to_result ~none:"Could not find a DTS audio stream"
+      (List.find_opt Shared.is_dts_hd_ma (Ffprobe.audio_streams probe))
   in
 
   (* 3. Validate metadata *)
   let* lang =
-    match stream.language with
-    | None -> Error "Target stream has no language tag"
-    | Some l -> Ok l
+    Option.to_result ~none:"Target stream has no language tag" stream.language
   in
 
-  Printf.printf "[-] Found DTS stream: index=%d, lang=%s\n%!" stream.index lang;
+  let* bitrate =
+    Option.to_result ~none:"Target stream has no bitrate" stream.bitrate
+  in
+
+  Printf.printf "[-] Found DTS stream @ index=%d with lang=%s\n%!" stream.index
+    lang;
 
   (* 4. Prepare filenames *)
   let dir = Filename.dirname filepath in
@@ -106,11 +89,13 @@ let run filepath : (unit, string) result =
       "-map_chapters";
       "0";
       "-metadata:s:a:0";
-      Printf.sprintf "title=%s" (format_audio_title stream);
+      Printf.sprintf "title=%s" (Shared.format_audio_title stream);
       "-metadata:s:a:1";
       Printf.sprintf "title=EAC3 5.1 @ %s kbps" bitrate_k;
       "-metadata:s:a:1";
       Printf.sprintf "language=%s" lang;
+      "-disposition:a:0";
+      "1";
       "-disposition:a:1";
       "0";
       temp_file;

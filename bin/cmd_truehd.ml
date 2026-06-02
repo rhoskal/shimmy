@@ -21,55 +21,30 @@ let mk_final_filename (path : string) : string =
   in
   Filename.concat dir (clean_name ^ "-rhoskal" ^ ext)
 
-let is_atmos (stream : Ffprobe.Audio.t) : bool =
-  let re = Re.compile (Re.str "Atmos") in
-  match stream.profile with
-  | None -> false
-  | Some profile -> Re.execp re profile
-
-let format_audio_title (stream : Ffprobe.Audio.t) : string =
-  let base = "TrueHD" in
-  let with_atmos = if is_atmos stream then base ^ " Atmos" else base in
-
-  match stream.channel_layout with
-  | None -> with_atmos
-  | Some Mono -> Printf.sprintf "%s 1.0" with_atmos
-  | Some Stereo -> Printf.sprintf "%s 2.0" with_atmos
-  | Some Surround_3_0 -> Printf.sprintf "%s 3.0" with_atmos
-  | Some Surround_5_1 -> Printf.sprintf "%s 5.1" with_atmos
-  | Some Surround_7_1 -> Printf.sprintf "%s 7.1" with_atmos
-  | Some Surround_9_1 -> Printf.sprintf "%s 9.1" with_atmos
-  | Some (Unknown s) -> Printf.sprintf "%s %s" with_atmos s
-
 let run filepath : (unit, string) result =
   let open Result_syntax in
-  (* 1. Probe *)
+  (* Probe *)
   let* probe = Ffprobe.probe_media_file filepath in
 
-  let audio_streams = Ffprobe.audio_streams probe in
-
-  (* 2. Find target stream *)
+  (* Find target stream *)
   let* stream =
-    match
-      List.find_opt
-        (fun (s : Ffprobe.Audio.t) -> s.codec_name = "truehd")
-        audio_streams
-    with
-    | None -> Error "Could not find a TRUEHD audio stream"
-    | Some s -> Ok s
+    Option.to_result ~none:"Could not find a TRUEHD audio stream"
+      (List.find_opt Shared.is_truehd (Ffprobe.audio_streams probe))
   in
 
-  (* 3. Validate metadata *)
+  (* Validate metadata *)
   let* lang =
-    match stream.language with
-    | None -> Error "Target stream has no language tag"
-    | Some l -> Ok l
+    Option.to_result ~none:"Target stream has no language tag" stream.language
   in
 
-  Printf.printf "[-] Found TRUEHD stream: index=%d, lang=%s\n%!" stream.index
-    lang;
+  let* bitrate =
+    Option.to_result ~none:"Target stream has no bitrate" stream.bitrate
+  in
 
-  (* 4. Prepare filenames *)
+  Printf.printf "[-] Found TRUEHD stream @ index=%d with lang=%s\n%!"
+    stream.index lang;
+
+  (* Prepare filenames *)
   let dir = Filename.dirname filepath in
   let base = Filename.basename filepath in
   let name, ext =
@@ -81,7 +56,7 @@ let run filepath : (unit, string) result =
   let temp_file = Filename.concat dir (Printf.sprintf "%s_temp%s" name ext) in
   let final_file = mk_final_filename filepath in
 
-  (* 5. Build and run FFmpeg *)
+  (* Build and run FFmpeg *)
   let bitrate_k = string_of_int 1536 in
 
   let ffmpeg_argv =
@@ -114,11 +89,13 @@ let run filepath : (unit, string) result =
       "-map_chapters";
       "0";
       "-metadata:s:a:0";
-      Printf.sprintf "title=%s" (format_audio_title stream);
+      Printf.sprintf "title=%s" (Shared.format_audio_title stream);
       "-metadata:s:a:1";
       Printf.sprintf "title=EAC3 5.1 @ %s kbps" bitrate_k;
       "-metadata:s:a:1";
       Printf.sprintf "language=%s" lang;
+      "-disposition:a:0";
+      "1";
       "-disposition:a:1";
       "0";
       temp_file;
@@ -128,7 +105,7 @@ let run filepath : (unit, string) result =
   Printf.printf "[+] Running ffmpeg...\n%!";
   let* () = Process.run_command ffmpeg_argv in
 
-  (* 6. Run mkvmerge *)
+  (* Run mkvmerge *)
   let mkvmerge_argv =
     [| "mkvmerge"; "--quiet"; "--output"; final_file; temp_file |]
   in
