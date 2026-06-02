@@ -39,6 +39,9 @@ module Video = struct
     bit_depth : int option;
     bitrate : int option;
     codec_name : string;
+    color_primaries : string option;
+    color_space : string option;
+    color_transfer : string option;
     disposition : Disposition.t;
     dovi : Dovi.t option;
     frame_rate : string option;
@@ -171,6 +174,9 @@ module VideoParser = struct
     | Some _ as result -> result
 
   let codec_name t = t |> member "codec_name" |> to_string
+  let color_primaries t = t |> member "color_primaries" |> to_string_option
+  let color_space t = t |> member "color_space" |> to_string_option
+  let color_transfer t = t |> member "color_transfer" |> to_string_option
 
   let dovi t : Dovi.t option =
     match t |> member "side_data_list" with
@@ -345,6 +351,9 @@ let parse_video_stream json : Video.t =
     bit_depth = VideoParser.bit_depth stream;
     bitrate = VideoParser.bitrate stream;
     codec_name = VideoParser.codec_name stream;
+    color_primaries = VideoParser.color_primaries stream;
+    color_space = VideoParser.color_space stream;
+    color_transfer = VideoParser.color_transfer stream;
     disposition = VideoParser.disposition stream;
     dovi = VideoParser.dovi stream;
     frame_rate = VideoParser.avg_frame_rate stream;

@@ -60,6 +60,10 @@ end
     - [bit_depth]: Bits per pixel component, if available (e.g. 8, 10).
     - [bitrate]: Bitrate in bits per second.
     - [codec_name]: Codec identifier (e.g. "h264", "hevc").
+    - [color_primaries]: Color primaries (e.g. "bt2020", "bt709").
+    - [color_space]: Color space (e.g. "bt2020cll", "smpte2084").
+    - [color_transfer]: Transfer characteristics / gamma curve (e.g. "smpte2084"
+      for PQ, "bt709").
     - [disposition]: Disposition flags (see {!Disposition.t}).
     - [dovi]: Dolby Vision metadata if present (see {!Dovi.t}).
     - [frame_rate]: Raw ffprobe string (e.g. "30000/1001"). Not normalized.
@@ -73,6 +77,9 @@ module Video : sig
     bit_depth : int option;
     bitrate : int option;
     codec_name : string;
+    color_primaries : string option;
+    color_space : string option;
+    color_transfer : string option;
     disposition : Disposition.t;
     dovi : Dovi.t option;
     frame_rate : string option;

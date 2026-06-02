@@ -56,15 +56,3 @@ let bitrate_k (stream : Ffprobe.Audio.t) : string =
 
 let normalized_codec (stream : Ffprobe.Audio.t) : string =
   String.uppercase_ascii stream.codec_name
-
-(* let string_of_channel_layout_opt (stream : Ffprobe.Audio.t): string option =
-  match stream.channel_layout with
-  | None -> Error "No channel layout detected"
-  | Some Mono -> Ok "Mono"
-  | Some Stereo -> Ok "Stereo"
-  | Some Surround_3_0 -> Ok "3.0"
-  | Some Surround_5_1 -> Ok "5.1"
-  | Some Surround_7_1 -> Ok "7.1"
-  | Some Surround_9_1 -> Ok "9.1"
-  | Some (Unknown x) ->
-      Error (Printf.sprintf "Unknown channel layout found: %s" x) *)

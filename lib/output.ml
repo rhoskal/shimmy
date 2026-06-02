@@ -27,6 +27,14 @@ let get_bit_depth (stream : Ffprobe.Video.t) : int =
       | _ -> 8)
   | Some bd -> bd
 
+let is_hdr (stream : Ffprobe.Video.t) : bool =
+  match stream.color_transfer with
+  | None -> false
+  | Some ct -> (
+      match stream.color_primaries with
+      | None -> false
+      | Some cp -> ct = "smpte2084" && cp = "bt2020")
+
 let print_video_stream (stream : Ffprobe.Video.t) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
     (match stream.language with None -> "und" | Some lang -> lang);
@@ -48,11 +56,17 @@ let print_video_stream (stream : Ffprobe.Video.t) : unit =
   | None -> ()
   | Some p -> Printf.printf "  • Profile    : %s\n" p);
 
-  match stream.frame_rate with
+  Printf.printf "  • HDR        : %b\n" (is_hdr stream);
+
+  (match stream.frame_rate with
   | None -> ()
   | Some frame_rate ->
       Printf.printf "  • FrameRate  : %s\n"
-        (match get_fps frame_rate with None -> "UNKNOWN" | Some fps -> fps)
+        (match get_fps frame_rate with None -> "UNKNOWN" | Some fps -> fps));
+
+  match stream.dovi with
+  | None -> ()
+  | Some dovi -> Printf.printf "  • DV Profile : %d\n" dovi.profile
 
 let print_audio_stream (stream : Ffprobe.Audio.t) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
