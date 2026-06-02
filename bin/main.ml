@@ -17,6 +17,7 @@ let cmds =
     Cmd_dts.cmd;
     Cmd_dtshd.cmd;
     Cmd_dtsx.cmd;
+    Cmd_head.cmd;
     Cmd_truehd.cmd;
     Cmd_probe.cmd;
   ]

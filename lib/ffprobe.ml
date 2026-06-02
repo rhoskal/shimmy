@@ -247,8 +247,8 @@ module AudioParser = struct
         else if String.starts_with ~prefix:"7.1" s then Some Audio.Surround_7_1
         else if String.starts_with ~prefix:"5.1" s then Some Audio.Surround_5_1
         else if String.starts_with ~prefix:"3.0" s then Some Audio.Surround_3_0
-        else if String.starts_with ~prefix:"2.0" s then Some Audio.Stereo
-        else if String.starts_with ~prefix:"1.0" s then Some Audio.Mono
+        else if String.starts_with ~prefix:"stereo" s then Some Audio.Stereo
+        else if String.starts_with ~prefix:"mono" s then Some Audio.Mono
         else Some (Audio.Unknown s)
 
   let channels t = t |> member "channels" |> to_int_option

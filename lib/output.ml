@@ -79,9 +79,11 @@ let print_audio_stream (stream : Ffprobe.Audio.t) : unit =
   | None -> ()
   | Some r -> Printf.printf "  • SampleRate : %d Hz\n" r);
 
-  match stream.title with
+  (match stream.title with
   | None -> ()
-  | Some t -> Printf.printf "  • Title      : %s\n" t
+  | Some t -> Printf.printf "  • Title      : %s\n" t);
+
+  Printf.printf "  • Default    : %b\n" stream.disposition.default_present
 
 let print_subtitle_stream (stream : Ffprobe.Subtitle.t) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
@@ -116,7 +118,7 @@ let print_format_info (fmt : Ffprobe.Format.t) : unit =
   (match fmt.size with
   | None -> ()
   | Some bytes ->
-      if bytes > 1_000_000_000 then
+      if bytes >= 1_000_000_000 then
         Printf.printf "  • Size       : %.2f GB\n"
           (float_of_int bytes /. 1_000_000_000.0)
       else

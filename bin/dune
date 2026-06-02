@@ -7,7 +7,8 @@
   cmd_dts
   cmd_dtshd
   cmd_dtsx
-  cmd_truehd
+  cmd_head
   cmd_probe
+  cmd_truehd
   main)
  (libraries cmdliner shimmy))
