@@ -29,6 +29,9 @@ let video_stream_json =
     "profile": "Main 10",
     "height": 1608,
     "pix_fmt": "yuv420p10le",
+    "color_space": "bt2020nc",
+    "color_transfer": "smpte2084",
+    "color_primaries": "bt2020",
     "width": 3840,
     "disposition": {
       "default": 1,
