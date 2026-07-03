@@ -35,14 +35,6 @@ let get_hdr_format (stream : Ffprobe.Video.t) : string option =
     else None
   else None
 
-let is_hdr (stream : Ffprobe.Video.t) : bool =
-  match stream.color_transfer with
-  | None -> false
-  | Some ct -> (
-      match stream.color_primaries with
-      | None -> false
-      | Some cp -> ct = "smpte2084" && cp = "bt2020")
-
 let print_video_stream (stream : Ffprobe.Video.t) : unit =
   Printf.printf "Stream #%d (%s)\n" stream.index
     (match stream.language with None -> "und" | Some lang -> lang);
