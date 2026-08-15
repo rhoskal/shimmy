@@ -29,6 +29,7 @@
               with pkgs;
               [
                 ffmpeg
+                just
                 mkvtoolnix
                 nixd
                 nixfmt
