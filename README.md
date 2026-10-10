@@ -10,3 +10,10 @@ preserving the original audio track.
 2. Before installing, make sure your package index is up to date: `opam update`
 3. Then install the project's dependencies: `just install`
 4. Build project: `just build`
+
+## Publishing
+
+```sh
+git tag v<version>
+git push origin --tags
+```
